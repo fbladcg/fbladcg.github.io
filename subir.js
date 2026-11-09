@@ -43,8 +43,9 @@
     });
   }
 
-  function enviarUna(file, base) {
+  function enviarUna(file, base, alPreparar) {
     return prepararImagen(file).then(function (img) {
+      if (alPreparar) alPreparar();
       var cuerpo = {
         accion: "subir",
         codigo: base.codigo,
@@ -103,11 +104,18 @@
       var cont = $("miniaturas");
       cont.innerHTML = "";
       archivos.forEach(function (f) {
+        var mini = document.createElement("div");
+        mini.className = "mini";
         var img = document.createElement("img");
         img.alt = "";
         img.src = URL.createObjectURL(f);
-        cont.appendChild(img);
+        var estado = document.createElement("span");
+        estado.className = "mini__estado";
+        mini.appendChild(img);
+        mini.appendChild(estado);
+        cont.appendChild(mini);
       });
+      $("progreso").hidden = true;
       var extra = (this.files || []).length > MAX_FOTOS ? " (solo se enviarán las primeras " + MAX_FOTOS + ")" : "";
       $("cuantas").textContent = archivos.length ? archivos.length + (archivos.length === 1 ? " foto escogida" : " fotos escogidas") + extra : "JPG o PNG";
     });
@@ -127,26 +135,64 @@
       var base = { album: album, nombre: nombre, codigo: $("codigo").value.trim(), nota: $("nota").value.trim() };
       var enviadas = 0;
       var error = null;
+      var total = archivos.length;
+      var minis = Array.prototype.slice.call($("miniaturas").children);
+      minis.forEach(function (m) { m.setAttribute("data-estado", "espera"); });
+      // Barra: avanza por foto; mientras una foto viaja, se acerca poco a poco a su meta.
+      var actual = 0, meta = 0, reloj = null;
+      var pintarBarra = function () {
+        var pct = Math.round(actual * 100);
+        $("progreso-relleno").style.width = pct + "%";
+        $("progreso-barra").setAttribute("aria-valuenow", pct);
+      };
+      var avanzar = function (hasta, poco) {
+        clearInterval(reloj);
+        if (!poco) { actual = meta = hasta; pintarBarra(); return; }
+        meta = hasta;
+        reloj = setInterval(function () { actual += (meta - actual) * 0.08; pintarBarra(); }, 200);
+      };
+      $("progreso").hidden = false;
+      avanzar(0);
       archivos.reduce(function (p, f, i) {
         return p.then(function () {
           if (error) return;
-          boton.textContent = "Enviando foto " + (i + 1) + " de " + archivos.length + "…";
-          return enviarUna(f, base).then(function () { enviadas++; }, function (err) { error = err; });
+          var mini = minis[i];
+          if (mini) { mini.setAttribute("data-estado", "subiendo"); mini.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+          boton.textContent = "Enviando " + (i + 1) + " de " + total + "…";
+          $("progreso-texto").textContent = "Preparando foto " + (i + 1) + " de " + total + "…";
+          avanzar((i + 0.25) / total, true);
+          return enviarUna(f, base, function () {
+            $("progreso-texto").textContent = "Enviando foto " + (i + 1) + " de " + total + "…";
+            avanzar((i + 0.95) / total, true);
+          }).then(function () {
+            enviadas++;
+            if (mini) mini.setAttribute("data-estado", "listo");
+            avanzar((i + 1) / total);
+            $("progreso-texto").textContent = enviadas + " de " + total + " enviadas";
+          }, function (err) {
+            error = err;
+            if (mini) mini.setAttribute("data-estado", "error");
+            avanzar(i / total);
+          });
         });
       }, Promise.resolve()).then(function () {
+        clearInterval(reloj);
         boton.disabled = false;
         boton.textContent = "Enviar fotos";
         if (enviadas === archivos.length) {
           mensaje("¡Gracias! Se enviaron " + enviadas + (enviadas === 1 ? " foto" : " fotos") + ". La directiva las revisará antes de publicarlas.");
+          $("progreso-texto").textContent = "✓ " + total + (total === 1 ? " foto enviada" : " fotos enviadas");
           archivos = [];
           $("fotos").value = "";
-          $("miniaturas").innerHTML = "";
+          setTimeout(function () { if (!archivos.length) $("miniaturas").innerHTML = ""; }, 3000);
           $("cuantas").textContent = "JPG o PNG";
           $("nota").value = "";
         } else {
           mensaje((enviadas ? "Se enviaron " + enviadas + " de " + archivos.length + " fotos. Si vuelves a darle a «Enviar», se envían solo las que faltan. " : "") + (error ? error.message : ""), true);
           archivos = archivos.slice(enviadas);
-          Array.prototype.slice.call($("miniaturas").children, 0, enviadas).forEach(function (n) { n.remove(); });
+          minis.slice(0, enviadas).forEach(function (n) { n.remove(); });
+          minis.slice(enviadas + 1).forEach(function (n) { n.setAttribute("data-estado", "espera"); });
+          $("progreso-texto").textContent = enviadas + " de " + total + " enviadas";
           $("cuantas").textContent = archivos.length + " por enviar";
         }
       });

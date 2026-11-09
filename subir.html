@@ -34,7 +34,21 @@
     .subir .elegir { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border: 2px dashed var(--blue); border-radius: 12px; padding: 26px 16px; cursor: pointer; color: var(--blue); font-weight: 700; text-align: center; margin-top: 6px !important; }
     .elegir__nota { display: block; font-weight: 400; }
     .miniaturas { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 12px; }
-    .miniaturas img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
+    .miniaturas img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; transition: opacity .3s, filter .3s; }
+    .mini { position: relative; }
+    .mini__estado { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.6rem; font-weight: 700; color: #fff; pointer-events: none; }
+    .mini[data-estado="espera"] img { opacity: .45; filter: grayscale(.6); }
+    .mini[data-estado="subiendo"] .mini__estado { background: rgba(10,46,127,.45); }
+    .mini[data-estado="subiendo"] .mini__estado::after { content: ""; width: 26px; height: 26px; border: 3px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: girar .8s linear infinite; }
+    .mini[data-estado="listo"] .mini__estado { background: rgba(29,95,51,.45); }
+    .mini[data-estado="listo"] .mini__estado::after { content: "✓"; }
+    .mini[data-estado="error"] .mini__estado { background: rgba(161,40,29,.55); }
+    .mini[data-estado="error"] .mini__estado::after { content: "!"; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+    .progreso { margin-top: 16px; }
+    .progreso__barra { height: 12px; background: var(--gris); border: 1px solid var(--borde); border-radius: 999px; overflow: hidden; }
+    .progreso__barra span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--gold)); border-radius: 999px; transition: width .35s ease; }
+    .progreso__texto { margin: 8px 0 0; text-align: center; font-weight: 700; color: var(--navy); font-size: .95rem; }
     .permiso { display: flex !important; gap: 10px; align-items: flex-start; font-weight: 400 !important; color: var(--black) !important; }
     .permiso input { width: 22px; height: 22px; flex: none; margin-top: 2px; }
     .mensaje { margin-top: 18px; padding: 14px 16px; border-radius: 10px; font-weight: 700; }
@@ -86,12 +100,16 @@
         <label class="permiso"><input type="checkbox" id="permiso" required> Tomé estas fotos o tengo permiso para compartirlas, y las personas que aparecen están de acuerdo.</label>
 
         <button class="boton boton--acento" type="submit" id="enviar">Enviar fotos</button>
+        <div class="progreso" id="progreso" hidden>
+          <div class="progreso__barra" role="progressbar" aria-label="Progreso del envío" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progreso-barra"><span id="progreso-relleno"></span></div>
+          <p class="progreso__texto" id="progreso-texto" aria-live="polite"></p>
+        </div>
         <div class="mensaje" id="mensaje" hidden></div>
       </form>
     </div>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js" integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="subir.js?v=6"></script>
+  <script src="subir.js?v=7"></script>
 </body>
 </html>
