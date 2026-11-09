@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  var MAX_FOTOS = 10;
+  var MAX_FOTOS = 15;
   var MAX_LADO = 2000;
   var $ = function (id) { return document.getElementById(id); };
   var url = "";
