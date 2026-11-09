@@ -214,9 +214,51 @@
     tToast = setTimeout(function () { t.hidden = true; }, error ? 8000 : 4500);
   }
 
-  function ocupado(msg) {
-    $("ocupado").textContent = msg || "";
-    $("ocupado").hidden = !msg;
+  // Pantalla de espera. Opcional: fracción (0–1) para la barra y la foto que se está subiendo.
+  var ocu = null;
+  function ocupado(msg, fraccion, foto) {
+    var o = $("ocupado");
+    o.hidden = !msg;
+    if (!msg) return;
+    if (!ocu) {
+      o.textContent = "";
+      ocu = { foto: el("img", { class: "ocupado__foto", alt: "" }), texto: el("p", { class: "ocupado__texto" }), relleno: el("span") };
+      ocu.barra = el("div", { class: "barra-progreso", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100" }, [ocu.relleno]);
+      o.appendChild(el("div", { class: "ocupado__caja" }, [ocu.foto, ocu.texto, ocu.barra]));
+    }
+    ocu.texto.textContent = msg;
+    ocu.foto.hidden = !foto;
+    if (foto) ocu.foto.src = foto;
+    ocu.barra.hidden = fraccion === undefined || fraccion === null;
+    if (!ocu.barra.hidden) {
+      var pct = Math.round(Math.max(0, Math.min(1, fraccion)) * 100);
+      ocu.relleno.style.width = pct + "%";
+      ocu.barra.setAttribute("aria-valuenow", pct);
+    }
+  }
+
+  // Tarjeta flotante (no bloquea) mientras se cargan fotos a un álbum, una por una.
+  var cargandoFotos = false;
+  function progresoFotos(msg, fraccion, foto) {
+    var c = $("progreso-fotos");
+    if (!c) {
+      c = el("div", { class: "progreso-fotos", id: "progreso-fotos", role: "status", "aria-live": "polite" }, [
+        el("img", { class: "progreso-fotos__foto", alt: "" }),
+        el("div", { class: "progreso-fotos__info" }, [
+          el("p", { class: "progreso-fotos__texto" }),
+          el("div", { class: "barra-progreso", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100" }, [el("span")])
+        ])
+      ]);
+      document.body.appendChild(c);
+    }
+    c.hidden = !msg;
+    if (!msg) return;
+    c.querySelector(".progreso-fotos__texto").textContent = msg;
+    var img = c.querySelector(".progreso-fotos__foto");
+    if (foto) img.src = foto;
+    var pct = Math.round(Math.max(0, Math.min(1, fraccion || 0)) * 100);
+    c.querySelector(".barra-progreso span").style.width = pct + "%";
+    c.querySelector(".barra-progreso").setAttribute("aria-valuenow", pct);
   }
 
   // Mientras se edita una sugerencia de Instagram, los cambios no cuentan (aún no van a la página).
@@ -1202,21 +1244,39 @@
     archivo.addEventListener("change", function () {
       var archivos = Array.prototype.slice.call(archivo.files || []);
       if (!archivos.length) return;
-      var hechas = 0, fallidas = 0;
+      archivo.value = "";
+      if (cargandoFotos) return avisar("Espera a que terminen de cargar las fotos anteriores.", true);
+      cargandoFotos = true;
+      var hechas = 0, fallidas = 0, total = archivos.length;
+      // Vuelve a dibujar el álbum solo si sigue abierto y no se está escribiendo en él.
+      var refrescar = function () {
+        var abierto = actual === "albumes" && (datos.albumes || [])[albumAbierto] === a;
+        var act = document.activeElement;
+        var escribiendo = act && /^(INPUT|TEXTAREA|SELECT)$/.test(act.tagName) && $("panel").contains(act);
+        if (!abierto || escribiendo) return;
+        var y = window.scrollY; pintar(); window.scrollTo(0, y);
+      };
       archivos.reduce(function (p, f, i) {
         return p.then(function () {
-          ocupado("Preparando foto " + (i + 1) + " de " + archivos.length + "…");
+          var mini = URL.createObjectURL(f);
+          progresoFotos("Cargando foto " + (i + 1) + " de " + total + "…", i / total, mini);
           return prepararFoto(f, "fotos/albumes/" + a.id).then(function (ruta) {
             fotos.push({ foto: ruta, descripcion: "", autor: "" });
             hechas++;
-          }, function () { fallidas++; });
+            marcarCambio();
+            refrescar();
+          }, function () { fallidas++; }).then(function () {
+            progresoFotos("Cargando foto " + (i + 1) + " de " + total + "…", (i + 1) / total, null);
+            setTimeout(function () { URL.revokeObjectURL(mini); }, 1000);
+          });
         });
       }, Promise.resolve()).then(function () {
-        ocupado(null);
-        if (hechas) marcarCambio();
+        cargandoFotos = false;
+        progresoFotos("✓ " + hechas + " de " + total + (total === 1 ? " foto lista" : " fotos listas"), 1, null);
+        setTimeout(function () { if (!cargandoFotos) progresoFotos(null); }, 2500);
         avisar(hechas + (hechas === 1 ? " foto añadida" : " fotos añadidas") +
           (fallidas ? ". " + fallidas + " no se pudieron abrir (usa JPG o PNG)" : "") + ". Recuerda «Guardar cambios».", fallidas > 0);
-        pintar();
+        refrescar();
       });
     });
     panel.appendChild(el("div", { class: "fila-titulo" }, [
@@ -1900,6 +1960,7 @@
   }
 
   function guardar() {
+    if (cargandoFotos) return avisar("Espera a que terminen de cargar las fotos antes de guardar.", true);
     var salida = contenidoLimpio();
     var yaml = generarYaml(salida);
     if (modo !== "github") {
@@ -1929,9 +1990,12 @@
       // 1) Subir las fotos nuevas, una por una.
       return nuevas.reduce(function (p, ruta, i) {
         return p.then(function () {
-          ocupado("Subiendo foto " + (i + 1) + " de " + nuevas.length + "…");
+          var foto = ruta.indexOf("fotos/") === 0 ? vistas[ruta] || null : null;
+          var texto = "Subiendo foto " + (i + 1) + " de " + nuevas.length + "…";
+          ocupado(texto, i / (nuevas.length + 1), foto);
           return gh("git/blobs", "POST", { content: porSubir[ruta], encoding: "base64" }).then(function (b) {
             entradas.push({ path: ruta, mode: "100644", type: "blob", sha: b.sha });
+            ocupado(texto, (i + 1) / (nuevas.length + 1), foto);
           });
         });
       }, Promise.resolve());
@@ -1947,7 +2011,7 @@
         });
       });
     }).then(function () {
-      ocupado("Publicando…");
+      ocupado("Publicando…", nuevas.length ? nuevas.length / (nuevas.length + 1) : null);
       entradas.push({ path: ARCHIVO, mode: "100644", type: "blob", content: yaml });
       return gh("git/trees", "POST", { base_tree: arbolBase, tree: entradas });
     }).then(function (arbol) {
