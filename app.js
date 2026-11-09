@@ -41,14 +41,93 @@
       .join("");
   }
 
-  function seccion(id, titulo, contenido, clase) {
+  // rutaTitulo: dónde se guarda el título si se edita con el lápiz (por defecto "titulos.<id>").
+  function seccion(id, titulo, contenido, clase, rutaTitulo) {
     return (
       '<section id="' + id + '" class="seccion ' + (clase || "") + '">' +
       '<div class="contenedor">' +
-      (titulo ? '<h2 class="seccion__titulo">' + t(titulo) + "</h2>" : "") +
+      (titulo ? '<h2 class="seccion__titulo" data-editar="' + t(rutaTitulo || "titulos." + id) + '">' + t(titulo) + "</h2>" : "") +
       contenido +
       "</div></section>"
     );
+  }
+
+  // ---------- Texto con formato (bloques de texto) ----------
+  // Solo se permiten etiquetas seguras: nada de scripts, estilos ni atributos raros.
+  var PERMITIDAS = { P: 1, BR: 1, B: 1, STRONG: 1, I: 1, EM: 1, U: 1, A: 1, UL: 1, OL: 1, LI: 1, H3: 1, H4: 1, BLOCKQUOTE: 1 };
+  function sanear(html) {
+    var doc = new DOMParser().parseFromString("<div>" + String(html || "") + "</div>", "text/html");
+    var raiz = doc.body.firstChild;
+    (function limpiar(nodo) {
+      Array.prototype.slice.call(nodo.childNodes).forEach(function (h) {
+        if (h.nodeType === 3) return;
+        if (h.nodeType !== 1) { h.remove(); return; }
+        limpiar(h);
+        var tag = h.tagName === "DIV" ? "P" : h.tagName;
+        if (!PERMITIDAS[tag]) {
+          if (/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED)$/.test(h.tagName)) { h.remove(); return; }
+          while (h.firstChild) h.parentNode.insertBefore(h.firstChild, h);
+          h.remove();
+          return;
+        }
+        var nuevo = doc.createElement(tag);
+        while (h.firstChild) nuevo.appendChild(h.firstChild);
+        if (tag === "A") {
+          var href = String(h.getAttribute("href") || "").trim();
+          if (/^www\./i.test(href)) href = "https://" + href;
+          if (/^(https?:|mailto:)/i.test(href)) { nuevo.setAttribute("href", href); nuevo.setAttribute("target", "_blank"); nuevo.setAttribute("rel", "noopener"); }
+        }
+        h.replaceWith(nuevo);
+      });
+    })(raiz);
+    return raiz.innerHTML;
+  }
+
+  // Video de YouTube → id (o "" si el enlace no es de YouTube).
+  function idYouTube(url) {
+    var m = String(url || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/i);
+    return m ? m[1] : "";
+  }
+
+  // ---------- Bloques personalizados (añadidos con el editor visual) ----------
+  function htmlBloque(b, i) {
+    var r = "bloques." + i + ".";
+    var fondo = b.fondo === "gris" ? " seccion--gris" : b.fondo === "azul" ? " seccion--azul" : "";
+    var dentro = "";
+    if (b.tipo === "texto") {
+      dentro = '<div class="bloque__texto" data-editar="' + r + 'html" data-rico>' + (sanear(b.html) || "<p>Escribe aquí…</p>") + "</div>";
+    } else if (b.tipo === "titulo") {
+      dentro = '<h2 class="seccion__titulo bloque__titulo" data-editar="' + r + 'texto">' + t(b.texto || "Título") + "</h2>" +
+        (b.subtitulo || window.FBLA_EDITANDO ? '<p class="bloque__subtitulo" data-editar="' + r + 'subtitulo">' + t(b.subtitulo || "") + "</p>" : "");
+    } else if (b.tipo === "imagen") {
+      dentro = b.src
+        ? '<figure class="bloque__imagen' + (b.ancho === "completo" ? " bloque__imagen--completa" : "") + '">' +
+          '<img src="' + t(enlaceSeguro(b.src)) + '" alt="' + t(b.alt || b.pie || "") + '" loading="lazy">' +
+          (b.pie || window.FBLA_EDITANDO ? '<figcaption data-editar="' + r + 'pie">' + t(b.pie || "") + "</figcaption>" : "") + "</figure>"
+        : '<div class="bloque__vacio">🖼 Imagen sin escoger</div>';
+    } else if (b.tipo === "boton") {
+      var url = enlaceSeguro(b.enlace);
+      dentro = '<p class="bloque__boton"><a class="boton ' + (b.estilo === "borde" ? "boton--borde" : "boton--acento") + '" href="' + t(url || "#") + '"' +
+        (/^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : "") + ' data-editar="' + r + 'texto">' + t(b.texto || "Botón") + "</a></p>";
+    } else if (b.tipo === "video") {
+      var vid = idYouTube(b.enlace);
+      dentro = vid
+        ? '<div class="bloque__video"><iframe src="https://www.youtube-nocookie.com/embed/' + vid + '" title="' + t(b.titulo || "Video") + '" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
+        : '<div class="bloque__vacio">▶️ Video sin enlace de YouTube</div>';
+    } else if (b.tipo === "tarjetas") {
+      var items = lista(b.items);
+      dentro = '<div class="bloque__tarjetas bloque__tarjetas--' + (b.columnas === 2 || b.columnas === "2" ? "2" : "3") + '">' + items.map(function (x, k) {
+        var rk = r + "items." + k + ".";
+        return '<div class="tarjeta bloque__tarjeta">' +
+          '<span class="bloque__icono" data-editar="' + rk + 'icono">' + t(x.icono || "⭐") + "</span>" +
+          '<h3 data-editar="' + rk + 'titulo">' + t(x.titulo || "Título") + "</h3>" +
+          '<p data-editar="' + rk + 'texto">' + t(x.texto || "") + "</p></div>";
+      }).join("") + "</div>";
+    } else if (b.tipo === "separador") {
+      dentro = '<hr class="bloque__separador">';
+    }
+    return '<section id="bloque-' + t(b.id) + '" class="seccion bloque bloque--' + t(b.tipo) + fondo + '" data-bloque="' + t(b.id) + '">' +
+      '<div class="contenedor">' + dentro + "</div></section>";
   }
 
   // Convierte un enlace de Instagram en su forma oficial, o "" si no es válido.
@@ -120,6 +199,10 @@
     var html = "";
     var nav = [];
     var c = d.contacto || {};
+    var titulos = d.titulos || {};
+    // Cada sección se guarda aparte para poder ordenarla, ocultarla o intercalar bloques.
+    var secciones = [];
+    function agregar(id, menuTxt, h) { secciones.push({ id: id, menu: menuTxt, html: h }); }
 
     // ---- Portada ----
     var fondo = cap.foto_portada
@@ -137,9 +220,12 @@
       '<p class="portada__escuela">' + t(cap.escuela) + (cap.pueblo ? " · " + t(cap.pueblo) : "") + "</p>" +
       '<h1 class="portada__titulo">' + t(partes[0]) +
       (partes.length > 1 ? '<span class="portada__sub">' + t(partes.slice(1).join(" - ")) + "</span>" : "") + "</h1>" +
-      (lema.length > 1
-        ? '<ul class="portada__lema" aria-label="Lema">' + lema.map(function (x) { return "<li>" + t(x) + "</li>"; }).join("") + "</ul>"
-        : (cap.lema ? '<p class="portada__lema-texto">' + t(cap.lema) + "</p>" : "")) +
+      (window.FBLA_EDITANDO
+        // En modo edición el lema se muestra como texto (separa con | para que salgan insignias)
+        ? '<p class="portada__lema-texto" data-editar="capitulo.lema" title="Separa con | para mostrar insignias">' + t(cap.lema || "") + "</p>"
+        : lema.length > 1
+          ? '<ul class="portada__lema" aria-label="Lema">' + lema.map(function (x) { return "<li>" + t(x) + "</li>"; }).join("") + "</ul>"
+          : (cap.lema ? '<p class="portada__lema-texto">' + t(cap.lema) + "</p>" : "")) +
       (prox
         ? '<a class="portada__proximo" href="#eventos"><span class="portada__proximo-et">Próximo evento</span>' +
           '<strong>' + t(prox.ev.nombre) + '</strong><span class="portada__proximo-cuando">' + t(F.texto(prox.ev)) + " · " + t(prox.cuando) + "</span></a>"
@@ -154,67 +240,66 @@
     // ---- Sobre nosotros ----
     var sobre = d.sobre_nosotros;
     if (sobre) {
-      var datos = lista(sobre.datos).map(function (x) {
-        return '<div class="dato"><span class="dato__numero">' + t(x.numero) + '</span><span class="dato__etiqueta">' + t(x.etiqueta) + "</span></div>";
+      var datos = lista(sobre.datos).map(function (x, k) {
+        return '<div class="dato"><span class="dato__numero" data-editar="sobre_nosotros.datos.' + k + '.numero">' + t(x.numero) +
+          '</span><span class="dato__etiqueta" data-editar="sobre_nosotros.datos.' + k + '.etiqueta">' + t(x.etiqueta) + "</span></div>";
       }).join("");
-      html += seccion("nosotros", sobre.titulo || "Sobre nosotros",
-        '<p class="texto-grande">' + t(sobre.texto) + "</p>" +
-        (datos ? '<div class="datos">' + datos + "</div>" : ""));
-      nav.push(["nosotros", "Nosotros"]);
+      agregar("nosotros", "Nosotros", seccion("nosotros", sobre.titulo || "Sobre nosotros",
+        '<p class="texto-grande" data-editar="sobre_nosotros.texto">' + t(sobre.texto) + "</p>" +
+        (datos ? '<div class="datos">' + datos + "</div>" : ""), "", "sobre_nosotros.titulo"));
     }
 
     // ---- Anuncios ----
     var anuncios = lista(d.anuncios);
     if (anuncios.length) {
-      html += seccion("anuncios", "Anuncios",
+      agregar("anuncios", "Anuncios", seccion("anuncios", titulos.anuncios || "Anuncios",
         '<div class="rejilla rejilla--2">' + anuncios.map(function (a) {
+          var k = d.anuncios.indexOf(a), r = "anuncios." + k + ".";
           return '<article class="tarjeta anuncio">' +
-            (a.fecha ? '<p class="etiqueta">' + t(a.fecha) + "</p>" : "") +
-            "<h3>" + t(a.titulo) + "</h3>" + (a.texto ? "<p>" + t(a.texto) + "</p>" : "") +
+            (a.fecha || window.FBLA_EDITANDO ? '<p class="etiqueta" data-editar="' + r + 'fecha">' + t(a.fecha || "") + "</p>" : "") +
+            '<h3 data-editar="' + r + 'titulo">' + t(a.titulo) + "</h3>" +
+            (a.texto || window.FBLA_EDITANDO ? '<p data-editar="' + r + 'texto">' + t(a.texto || "") + "</p>" : "") +
             '<button type="button" class="evento__compartir" data-compartir-anuncio="' + anuncios.indexOf(a) + '">📤 Compartir imagen</button>' +
             "</article>";
-        }).join("") + "</div>", "seccion--gris");
-      nav.push(["anuncios", "Anuncios"]);
+        }).join("") + "</div>", "seccion--gris"));
     }
 
     // ---- Eventos ----
     var eventos = lista(d.eventos);
     if (eventos.length) {
-      html += seccion("eventos", "Próximos eventos", htmlEventos(eventos));
-      nav.push(["eventos", "Eventos"]);
+      agregar("eventos", "Eventos", seccion("eventos", titulos.eventos || "Próximos eventos", htmlEventos(eventos)));
     }
 
     // ---- Directiva ----
     var directiva = lista(d.directiva);
     if (directiva.length) {
-      html += seccion("directiva", "Nuestra directiva",
+      agregar("directiva", "Directiva", seccion("directiva", titulos.directiva || "Nuestra directiva",
         '<div class="rejilla rejilla--personas">' + directiva.map(function (p) {
+          var r = "directiva." + d.directiva.indexOf(p) + ".";
           var foto = p.foto
             ? '<img class="persona__foto" src="' + t(enlaceSeguro(p.foto)) + '" alt="' + t(p.nombre) + '" loading="lazy">'
             : '<div class="persona__foto persona__foto--iniciales" aria-hidden="true">' + t(iniciales(p.nombre)) + "</div>";
-          return '<div class="persona">' + foto + "<h3>" + t(p.nombre) + '</h3><p class="persona__puesto">' + t(p.puesto) + "</p></div>";
-        }).join("") + "</div>", "seccion--gris");
-      nav.push(["directiva", "Directiva"]);
+          return '<div class="persona">' + foto + '<h3 data-editar="' + r + 'nombre">' + t(p.nombre) +
+            '</h3><p class="persona__puesto" data-editar="' + r + 'puesto">' + t(p.puesto) + "</p></div>";
+        }).join("") + "</div>", "seccion--gris"));
     }
 
     // ---- Logros ----
     var logros = lista(d.logros);
     if (logros.length) {
-      html += seccion("logros", "Logros", htmlLogros(logros));
-      nav.push(["logros", "Logros"]);
+      agregar("logros", "Logros", seccion("logros", titulos.logros || "Logros", htmlLogros(logros)));
     }
 
     // ---- Documentos para descargar ----
     var documentos = lista(d.documentos).filter(function (x) { return x.titulo && (x.archivo || x.enlace); });
     if (documentos.length) {
-      html += seccion("documentos", "Documentos", htmlDocumentos(documentos));
-      nav.push(["documentos", "Documentos"]);
+      agregar("documentos", "Documentos", seccion("documentos", titulos.documentos || "Documentos", htmlDocumentos(documentos)));
     }
 
     // ---- Álbumes de fotos ----
     var albumes = albumesPublicados();
     if (albumes.length) {
-      html += seccion("albumes", "Álbumes de fotos",
+      agregar("albumes", "Fotos", seccion("albumes", titulos.albumes || "Álbumes de fotos",
         '<div class="albumes">' + albumes.map(function (a) {
           var meta = [a.fecha, a.lugar].filter(Boolean).map(t).join(" · ");
           var n = fotosDe(a).length;
@@ -223,8 +308,7 @@
             '<span class="album-tarjeta__n">' + n + (n === 1 ? " foto" : " fotos") + "</span></div>" +
             '<div class="album-tarjeta__info"><h3>' + t(a.titulo) + "</h3>" +
             (meta ? "<p>" + meta + "</p>" : "") + "</div></a>";
-        }).join("") + "</div>", "seccion--gris");
-      nav.push(["albumes", "Fotos"]);
+        }).join("") + "</div>", "seccion--gris"));
     }
 
     // ---- Instagram ----
@@ -233,10 +317,10 @@
     var feed = feedBehold(ig.behold);
     if (feed || fijas.length) {
       var perfil = enlaceSeguro(c.instagram);
-      html += seccion("instagram", ig.titulo || "Síguenos en Instagram",
+      agregar("instagram", "Instagram", seccion("instagram", ig.titulo || "Síguenos en Instagram",
         '<div class="instagram" id="instagram-posts"></div>' +
-        (perfil ? '<p class="instagram__mas"><a class="boton boton--borde" href="' + t(perfil) + '" target="_blank" rel="noopener">Ver más en Instagram</a></p>' : ""));
-      nav.push(["instagram", "Instagram"]);
+        (perfil ? '<p class="instagram__mas"><a class="boton boton--borde" href="' + t(perfil) + '" target="_blank" rel="noopener">Ver más en Instagram</a></p>' : ""),
+        "", "instagram.titulo"));
     }
 
     // ---- Contacto ----
@@ -244,14 +328,34 @@
       ["Instagram", c.instagram], ["Facebook", c.facebook], ["TikTok", c.tiktok]
     ].filter(function (r) { return r[1]; });
     if (c.correo || redes.length) {
-      html += seccion("contacto", "Contacto",
+      agregar("contacto", "Contacto", seccion("contacto", titulos.contacto || "Contacto",
         '<div class="contacto">' +
         (c.correo ? '<a class="boton boton--borde" href="mailto:' + t(c.correo) + '">✉ ' + t(c.correo) + "</a>" : "") +
         redes.map(function (r) {
           return '<a class="boton boton--borde" href="' + t(enlaceSeguro(r[1])) + '" target="_blank" rel="noopener">' + r[0] + "</a>";
-        }).join("") + "</div>");
-      nav.push(["contacto", "Contacto"]);
+        }).join("") + "</div>"));
     }
+
+    // ---- Bloques añadidos con el editor visual ----
+    lista(d.bloques).forEach(function (b) {
+      if (!b.id) return;
+      agregar("bloque-" + b.id, b.menu || "", htmlBloque(b, d.bloques.indexOf(b)));
+    });
+
+    // ---- Orden y secciones ocultas (definidos con el editor visual) ----
+    var diseno = d.diseno || {};
+    var orden = lista(diseno.orden);
+    var ocultas = lista(diseno.ocultas);
+    secciones.forEach(function (s, i) { s.pos = orden.indexOf(s.id) >= 0 ? orden.indexOf(s.id) : 1000 + i; });
+    secciones.sort(function (a, b) { return a.pos - b.pos; });
+    secciones.forEach(function (s) {
+      var oculta = ocultas.indexOf(s.id) >= 0;
+      if (oculta && !window.FBLA_EDITANDO) return;
+      html += oculta ? s.html.replace(/^<section /, '<section data-oculta="1" ') : s.html;
+      if (s.menu && !oculta) nav.push([s.id, s.menu]);
+    });
+    // Para el editor: el orden con que se dibujó la página.
+    window.FBLA_ORDEN = secciones.map(function (s) { return s.id; });
 
     app.innerHTML = html;
     // FBLA Connect (portal de miembros) en el menú. Si no se ha configurado, se usa el portal oficial.
@@ -269,6 +373,8 @@
     iniciarCuentaRegresiva();
     revisarRuta();
     registrarVisita("inicio");
+    // Aviso para el editor visual (editor.js): la página terminó de dibujarse.
+    document.dispatchEvent(new CustomEvent("fbla:lista"));
   }
 
   // ---------- Eventos y cuenta regresiva ----------
@@ -915,6 +1021,14 @@
   }
 
   window.addEventListener("hashchange", revisarRuta);
+
+  // Lo que el editor visual (editor.js) necesita de la página.
+  window.FBLA = {
+    datos: function () { return DATOS; },
+    reconstruir: function (d) { construir(d); },
+    sanear: sanear,
+    idYouTube: idYouTube
+  };
 
   function mostrarError(mensaje) {
     app.innerHTML =

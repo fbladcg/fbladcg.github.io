@@ -49,6 +49,21 @@ Después de guardar, la página pública se actualiza en **1 o 2 minutos**.
 
 ---
 
+## 2b. Editar directo en la página ✏️ (como Google Sites)
+
+Si ya entraste al panel alguna vez desde tu computadora o celular, en la página pública verás abajo a la izquierda el botón **✏️ Editar página**.
+
+1. Tócalo. La primera vez te puede pedir tu llave (la misma del panel).
+2. **Haz clic en cualquier texto con línea punteada** y escribe encima (títulos, anuncios, nombres de la directiva…).
+3. Usa **＋ Añadir bloque aquí** (entre secciones) para poner: Texto, Título, Imagen, Botón, Video de YouTube, Tarjetas o Separador.
+4. Cada sección tiene botones arriba: **↑ ↓** para moverla, **🙈 Ocultar**, y en los bloques **⚙ Opciones** y **🗑 Borrar**.
+5. Cuando termines, toca **💾 Publicar**. La página se actualiza en 1 o 2 minutos.
+
+> Las fechas de eventos, los logros, los álbumes y los documentos se siguen editando en el panel (el botón «Editar en el panel ↗» te lleva directo).
+> No uses el panel y el editor al mismo tiempo: guarda en uno antes de abrir el otro.
+
+---
+
 ## 3. Álbumes de fotos 📸
 
 1. Ve a **📸 Álbumes de fotos** → **＋ Crear álbum**.
