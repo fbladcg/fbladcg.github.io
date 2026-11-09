@@ -113,6 +113,15 @@ instagram:
   behold: https://feeds.behold.so/F9QJVJsOjOHNYke4Xg6r
   cantidad: "3"
 albumes:
+  - id: album-mw9nlsau
+    titulo: "CSP: Operation Smile"
+    fecha: ""
+    lugar: ""
+    descripcion: Proyecto de Servicio Comunitario dirigido por las estudiantes Génesis Cardona Valentín, Leunamis X. Charneco Muñoz y Daniella Hernández Ruiz
+    publicado: true
+    portada: ""
+    fotos: []
+    recibe_fotos: true
   - id: album-mw8qehnp
     titulo: Iniciación Local FBLA 2026
     fecha: 8 de diciembre de 2026
