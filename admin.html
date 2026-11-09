@@ -246,7 +246,6 @@
     .estado::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
     .estado[data-estado="ok"] { color: #8be0a4; }
     .estado[data-estado="pendiente"] { color: var(--gold); background: rgba(244,171,25,.15); }
-    .estado[data-estado="prueba"] { color: #c7d0e2; }
     /* Botones */
     .btn { border-radius: 10px; min-height: 40px; transition: background .15s, box-shadow .15s, transform .1s; }
     .btn:active:not(:disabled) { transform: translateY(1px); }
@@ -385,7 +384,6 @@
         <p class="campo__nota">No marques esta opción en una computadora compartida o de la escuela.</p>
         <div class="acciones">
           <button class="btn btn--azul" type="submit">Entrar</button>
-          <button class="btn btn--borde" type="button" id="prueba">Probar sin guardar</button>
         </div>
         <div class="error-caja" id="login-error" hidden></div>
       </form>
@@ -404,6 +402,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js" integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="fechas.js?v=3"></script>
   <script src="competencias.js?v=1"></script>
-  <script src="admin.js?v=27"></script>
+  <script src="admin.js?v=28"></script>
 </body>
 </html>

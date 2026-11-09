@@ -173,7 +173,7 @@
   var rutasOriginales = {};  // fotos que había al cargar (para borrar las que se quiten)
   var sha = null;            // versión de contenido.yml que se cargó
   var rama = "main";
-  var modo = null;           // "github" | "prueba"
+  var modo = null;           // "github" cuando se entra con el token
   var sesion = { owner: "", repo: "", token: "" };
   var vistas = {};           // ruta de foto -> imagen en memoria (para verla antes de publicar)
   var porSubir = {};         // ruta de foto -> contenido (base64) que se sube al guardar
@@ -266,10 +266,10 @@
   document.addEventListener("pointerdown", function () { silencioCambios = false; }, true);
   document.addEventListener("focusin", function () { silencioCambios = false; }, true);
 
-  // Indicador de la barra superior: ok (verde), pendiente (dorado), prueba (gris).
+  // Indicador de la barra superior: ok (verde), pendiente (dorado).
   function fijarEstado(tipo) {
     var e = $("estado");
-    e.textContent = tipo === "ok" ? "Todo guardado" : tipo === "pendiente" ? "Cambios sin guardar" : "Modo prueba";
+    e.textContent = tipo === "pendiente" ? "Cambios sin guardar" : "Todo guardado";
     e.setAttribute("data-estado", tipo);
   }
 
@@ -394,7 +394,6 @@
       }
       entrarGithub($("recordar").checked);
     });
-    $("prueba").addEventListener("click", entrarPrueba);
     $("guardar").addEventListener("click", guardar);
     $("salir").addEventListener("click", function () {
       if (hayCambios && !confirm("Tienes cambios sin guardar. ¿Salir de todas formas?")) return;
@@ -437,19 +436,6 @@
     }).then(function () { ocupado(null); });
   }
 
-  function entrarPrueba() {
-    ocupado("Cargando contenido…");
-    fetch(ARCHIVO + "?v=" + Date.now(), { cache: "no-store" }).then(function (r) {
-      if (!r.ok) throw new Error("No se encontró contenido.yml.");
-      return r.text();
-    }).then(function (txt) {
-      cargarTexto(txt);
-      modo = "prueba";
-      abrirEditor();
-    }).catch(function (e) { errorLogin(e.message); })
-      .then(function () { ocupado(null); });
-  }
-
   function cargarTexto(txt) {
     try {
       datos = jsyaml.load(txt) || {};
@@ -483,8 +469,7 @@
     $("login").hidden = true;
     $("editor").hidden = false;
     $("botones").hidden = false;
-    $("guardar").textContent = modo === "github" ? "💾 Guardar cambios" : "⬇ Descargar archivo";
-    fijarEstado(modo === "github" ? "ok" : "prueba");
+    fijarEstado("ok");
     var ultima = ls(CLAVE_LS_PESTANA);
     if (ultima && SECCIONES.some(function (s) { return s.key === ultima; })) actual = ultima;
     pintarPestanas();
@@ -596,11 +581,6 @@
     var s = SECCIONES.filter(function (x) { return x.key === actual; })[0];
     var panel = $("panel");
     panel.innerHTML = "";
-    if (modo === "prueba") {
-      panel.appendChild(el("div", { class: "aviso" }, [
-        "Estás en modo prueba: los cambios no se publican. El botón de arriba descarga el archivo contenido.yml (sin las fotos nuevas)."
-      ]));
-    }
     if (s.tipo === "albumes") return pintarAlbumes(panel, s);
     if (s.tipo === "visitas") return pintarVisitas(panel, s);
     if (s.tipo === "resumen") return pintarResumen(panel, s);
@@ -1563,7 +1543,7 @@
 
   function aprobarSugerencia(sug, zona) {
     silencioCambios = false;
-    if (modo !== "github") return avisar("En modo prueba no se pueden aprobar sugerencias.", true);
+    if (modo !== "github") return avisar("Entra con tu token para aprobar sugerencias.", true);
     var item;
     if (sug.tipo === "logro") {
       if (vacio(sug.titulo)) return avisar("Escribe el título del logro.", true);
@@ -1771,7 +1751,7 @@
     var a = (datos.albumes || []).filter(function (x) { return x.id === albumId; })[0];
     if (!a) return avisar("Escoge el álbum donde va la foto.", true);
     if (!p.datos) return avisar("La foto todavía se está cargando. Espera un momento.", true);
-    if (modo !== "github") return avisar("En modo prueba no se pueden aprobar fotos.", true);
+    if (modo !== "github") return avisar("Entra con tu token para aprobar fotos.", true);
     if (p.estado === "aprobando") return;
     p.estado = "aprobando";
     // Se guarda en WebP (la mitad del espacio, misma calidad).
@@ -1963,12 +1943,7 @@
     if (cargandoFotos) return avisar("Espera a que terminen de cargar las fotos antes de guardar.", true);
     var salida = contenidoLimpio();
     var yaml = generarYaml(salida);
-    if (modo !== "github") {
-      var a = el("a", { href: URL.createObjectURL(new Blob([yaml], { type: "text/yaml" })), download: "contenido.yml" });
-      document.body.appendChild(a); a.click(); a.remove();
-      avisar("Archivo descargado." + (Object.keys(porSubir).length ? " Las fotos nuevas no se incluyen en modo prueba." : ""));
-      return;
-    }
+    if (modo !== "github") return avisar("Entra al panel con tu token de GitHub para guardar.", true);
 
     var usadas = rutasFotos(salida);
     var nuevas = Object.keys(porSubir).filter(function (r) { return usadas[r]; });
