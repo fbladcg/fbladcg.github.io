@@ -138,10 +138,7 @@ albumes:
     descripcion: Los estudiantes visten los colores azul y dorado de la organización estudiantil FBLA.
     publicado: true
     portada: ""
-    fotos:
-      - foto: fotos/albumes/album-mw8s2ll5/fbla-logo-horizontal-navy-hires-mw988o1xiiy.webp
-        descripcion: ""
-        autor: Yadiel Lorenzo
+    fotos: []
     recibe_fotos: true
   - id: album-mw8rzoot
     titulo: Goofy Games Estatales FBLA 2026
