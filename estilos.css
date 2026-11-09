@@ -453,3 +453,11 @@ button.boton:disabled { opacity: .7; cursor: progress; transform: none; }
   }
   .puntos__punto--activo::before { background: var(--blue); transform: scale(1.35); }
 }
+
+/* ---------- Contacto en el celular: botones parejos ---------- */
+@media (max-width: 760px) {
+  .contacto { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .contacto .boton { text-align: center; padding: 12px 14px; font-size: .95rem; }
+  .contacto .contacto__correo { grid-column: 1 / -1; }
+  .contacto .boton:last-child:nth-child(even):not(.contacto__correo) { grid-column: 1 / -1; }
+}

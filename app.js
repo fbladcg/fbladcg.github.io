@@ -369,7 +369,7 @@
     if (c.correo || redes.length) {
       agregar("contacto", "Contacto", seccion("contacto", titulos.contacto || "Contacto",
         '<div class="contacto">' +
-        (c.correo ? '<a class="boton boton--borde" href="mailto:' + t(c.correo) + '">✉ ' + t(c.correo) + "</a>" : "") +
+        (c.correo ? '<a class="boton boton--borde contacto__correo" href="mailto:' + t(c.correo) + '">✉ ' + t(c.correo) + "</a>" : "") +
         redes.map(function (r) {
           return '<a class="boton boton--borde" href="' + t(enlaceSeguro(r[1])) + '" target="_blank" rel="noopener">' + r[0] + "</a>";
         }).join("") + "</div>"));
