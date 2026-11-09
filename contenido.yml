@@ -147,7 +147,16 @@ albumes:
     descripcion: ""
     publicado: true
     portada: ""
-    fotos: []
+    fotos:
+      - foto: fotos/albumes/album-mw8rzoot/img-8127-mw9o4yihf14.webp
+        descripcion: ""
+        autor: Karina
+      - foto: fotos/albumes/album-mw8rzoot/img-8131-mw9o54yvdzv.webp
+        descripcion: ""
+        autor: Karina
+      - foto: fotos/albumes/album-mw8rzoot/foto-miembro-mw9o5bg30ba.webp
+        descripcion: ""
+        autor: ""
     recibe_fotos: true
 subidas:
   activo: true
