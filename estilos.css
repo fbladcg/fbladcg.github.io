@@ -434,13 +434,22 @@ button.boton:disabled { opacity: .7; cursor: progress; transform: none; }
 .bloque__vacio { border: 2px dashed var(--borde); border-radius: var(--radio); padding: 40px; text-align: center; color: var(--texto-suave); }
 
 /* ---------- Directiva deslizable en el celular ---------- */
-.deslizar { display: none; }
+.puntos { display: none; }
 @media (max-width: 760px) {
   .rejilla--personas {
-    display: flex; overflow-x: auto; gap: 14px; margin: 0 -16px; padding: 4px 16px 18px;
-    scroll-snap-type: x mandatory; scroll-padding: 0 16px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    display: flex; overflow-x: auto; overscroll-behavior-x: contain; gap: 14px; margin: 0 -16px; padding: 4px 11% 18px;
+    scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .rejilla--personas::-webkit-scrollbar { display: none; }
-  .persona { flex: 0 0 68%; max-width: 260px; scroll-snap-align: start; }
-  .deslizar { display: block; text-align: center; margin: 4px 0 0; color: var(--texto-suave); font-size: .9rem; font-weight: 700; }
+  .persona { flex: 0 0 86%; scroll-snap-align: center; scroll-snap-stop: normal; transition: transform .3s ease; }
+  .puntos { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .puntos__punto {
+    width: 24px; height: 24px; padding: 0; border: 0; background: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .puntos__punto::before {
+    content: ""; width: 8px; height: 8px; border-radius: 50%; background: #b9c3d6;
+    transition: transform .25s ease, background-color .25s ease;
+  }
+  .puntos__punto--activo::before { background: var(--blue); transform: scale(1.35); }
 }

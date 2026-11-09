@@ -90,6 +90,45 @@
   }
 
   // ---------- Bloques personalizados (añadidos con el editor visual) ----------
+  // Directiva en el celular: tarjetas deslizables con círculos (como Instagram).
+  function carruseles() {
+    document.querySelectorAll(".rejilla--personas").forEach(function (g) {
+      var tarjetas = g.children;
+      if (tarjetas.length < 2) return;
+      var puntos = document.createElement("div");
+      puntos.className = "puntos";
+      Array.prototype.forEach.call(tarjetas, function (tj, i) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "puntos__punto";
+        b.setAttribute("aria-label", "Ver tarjeta " + (i + 1) + " de " + tarjetas.length);
+        b.addEventListener("click", function () {
+          g.scrollTo({ left: tj.offsetLeft - (g.clientWidth - tj.offsetWidth) / 2, behavior: "smooth" });
+        });
+        puntos.appendChild(b);
+      });
+      g.parentNode.insertBefore(puntos, g.nextSibling);
+      var marcar = function () {
+        var centro = g.scrollLeft + g.clientWidth / 2, mejor = 0, dist = Infinity;
+        Array.prototype.forEach.call(tarjetas, function (tj, i) {
+          var d = Math.abs(tj.offsetLeft + tj.offsetWidth / 2 - centro);
+          if (d < dist) { dist = d; mejor = i; }
+        });
+        Array.prototype.forEach.call(puntos.children, function (p, i) {
+          p.classList.toggle("puntos__punto--activo", i === mejor);
+          if (i === mejor) p.setAttribute("aria-current", "true"); else p.removeAttribute("aria-current");
+        });
+      };
+      var pendiente = false;
+      g.addEventListener("scroll", function () {
+        if (pendiente) return;
+        pendiente = true;
+        requestAnimationFrame(function () { pendiente = false; marcar(); });
+      }, { passive: true });
+      marcar();
+    });
+  }
+
   function htmlBloque(b, i) {
     var r = "bloques." + i + ".";
     var fondo = b.fondo === "gris" ? " seccion--gris" : b.fondo === "azul" ? " seccion--azul" : "";
@@ -281,7 +320,7 @@
             : '<div class="persona__foto persona__foto--iniciales" aria-hidden="true">' + t(iniciales(p.nombre)) + "</div>";
           return '<div class="persona">' + foto + '<h3 data-editar="' + r + 'nombre">' + t(p.nombre) +
             '</h3><p class="persona__puesto" data-editar="' + r + 'puesto">' + t(p.puesto) + "</p></div>";
-        }).join("") + "</div>" + (directiva.length > 1 ? '<p class="deslizar" aria-hidden="true">Desliza para ver más →</p>' : ""), "seccion--gris"));
+        }).join("") + "</div>", "seccion--gris"));
     }
 
     // ---- Logros ----
@@ -358,6 +397,7 @@
     window.FBLA_ORDEN = secciones.map(function (s) { return s.id; });
 
     app.innerHTML = html;
+    carruseles();
     // FBLA Connect (portal de miembros) en el menú. Si no se ha configurado, se usa el portal oficial.
     var connect = enlaceSeguro(c.fbla_connect === undefined ? "https://connect.fbla.org/" : c.fbla_connect);
     menu.innerHTML = nav.map(function (n) {
