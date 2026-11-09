@@ -33,7 +33,11 @@ eventos:
     descripcion: Registro disponible hasta el 6 de noviembre de 2026.
     tipo_fecha: dia
     inicio: "2026-12-11"
-    documentos: []
+    documentos:
+      - titulo: 26-27 High School Guidelines AIO
+        archivo: docs/26-27-high-school-guidelines-all-in-one-mw9rfkqxnpp.pdf
+        enlace: ""
+        tamano: 6865618
   - nombre: Divulgación del Programa de Administración de Empresas
     fecha: Enero de 2027
     hora: ""
