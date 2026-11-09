@@ -132,7 +132,34 @@ albumes:
     descripcion: Proyecto de Servicio Comunitario dirigido por las estudiantes Génesis Cardona Valentín, Leunamis X. Charneco Muñoz y Daniella Hernández Ruiz
     publicado: true
     portada: ""
-    fotos: []
+    fotos:
+      - foto: fotos/albumes/album-mw9nlsau/img-8117-mw9ujr914hg.webp
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8134-mw9ul3f21lv.webp
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8130-mw9ul4mrcpp.webp
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8201-mw9ulj7tc23.webp
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8222-mw9ulrlt2ww.webp
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8242-mw9um36y6vq.webp
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8205-mw9uml2mya4.webp
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8115-mw9umqdwe7v.webp
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8128-mw9umyv5gbg.webp
+        descripcion: ""
+        autor: Bryanna Torres
     recibe_fotos: true
   - id: album-mw8qehnp
     titulo: Iniciación Local FBLA 2026
