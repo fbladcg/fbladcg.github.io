@@ -149,11 +149,8 @@ albumes:
     lugar: Coliseo Manuel E. "Petaca" Iguina
     descripcion: ""
     publicado: true
-    portada: fotos/albumes/album-mw8rzoot/partes-de-word-mw9en0khmnf.webp
-    fotos:
-      - foto: fotos/albumes/album-mw8rzoot/partes-de-word-mw9en0khmnf.webp
-        descripcion: ""
-        autor: ""
+    portada: ""
+    fotos: []
     recibe_fotos: true
 subidas:
   activo: true
