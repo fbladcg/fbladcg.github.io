@@ -31,7 +31,8 @@
     .subir textarea { min-height: 80px; resize: vertical; }
     .subir input:focus, .subir select:focus, .subir textarea:focus { outline: 3px solid rgba(34,106,221,.35); border-color: var(--cobalt); }
     .subir .nota { font-size: .9rem; color: var(--texto-suave); margin: 6px 0 0; }
-    .elegir { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border: 2px dashed var(--blue); border-radius: 12px; padding: 26px 16px; cursor: pointer; color: var(--blue); font-weight: 700; text-align: center; margin-top: 6px !important; }
+    .subir .elegir { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border: 2px dashed var(--blue); border-radius: 12px; padding: 26px 16px; cursor: pointer; color: var(--blue); font-weight: 700; text-align: center; margin-top: 6px !important; }
+    .elegir__nota { display: block; font-weight: 400; }
     .miniaturas { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 12px; }
     .miniaturas img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
     .permiso { display: flex !important; gap: 10px; align-items: flex-start; font-weight: 400 !important; color: var(--black) !important; }
@@ -75,7 +76,7 @@
         </div>
 
         <label>Fotos (hasta 15 a la vez)</label>
-        <label class="elegir" for="fotos">📷 Toca aquí para escoger fotos<span class="nota" id="cuantas">JPG o PNG</span></label>
+        <label class="elegir" for="fotos">📷 Toca aquí para escoger fotos<span class="nota elegir__nota" id="cuantas">JPG o PNG</span></label>
         <input type="file" id="fotos" accept="image/*" multiple hidden>
         <div class="miniaturas" id="miniaturas"></div>
 
