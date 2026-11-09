@@ -11,12 +11,6 @@ capitulo:
   lema: Servicio | Educación | Progreso
   foto_portada: ""
   logo: fotos/fbla-logo-horizontal-white-hires-mw8t8jmbsmr.png
-unete:
-  activo: false
-  titulo: ¡Únete a FBLA!
-  texto: ¿Te interesan los negocios, el liderazgo o la tecnología? Forma parte de nuestro capítulo y compite a nivel estatal y nacional.
-  boton: Llenar solicitud
-  enlace: https://forms.google.com/
 sobre_nosotros:
   titulo: ¿Quiénes somos?
   texto: Future Business Leaders of America (FBLA) es la organización estudiantil de negocios más grande del mundo. En nuestro capítulo desarrollamos destrezas de liderazgo, servicio comunitario y preparación profesional a través de competencias, conferencias y actividades durante todo el año escolar.
@@ -126,10 +120,7 @@ albumes:
     descripcion: ""
     publicado: true
     portada: ""
-    fotos:
-      - foto: fotos/albumes/album-mw8qehnp/171476-mw8wmim2l6s.webp
-        descripcion: ""
-        autor: Yadiel Lorenzo
+    fotos: []
     recibe_fotos: true
   - id: album-mw8s2ll5
     titulo: FBLA Spirit Day
@@ -147,7 +138,10 @@ albumes:
     descripcion: ""
     publicado: true
     portada: ""
-    fotos: []
+    fotos:
+      - foto: fotos/albumes/album-mw8qehnp/171476-mw8wmim2l6s.webp
+        descripcion: ""
+        autor: Yadiel Lorenzo
     recibe_fotos: true
 subidas:
   activo: true
