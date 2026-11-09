@@ -157,6 +157,9 @@ albumes:
       - foto: fotos/albumes/album-mw8rzoot/foto-miembro-mw9o5bg30ba.webp
         descripcion: ""
         autor: ""
+      - foto: fotos/albumes/album-mw8rzoot/img-8130-mw9od1tz0kl.webp
+        descripcion: ""
+        autor: Karina
     recibe_fotos: true
 subidas:
   activo: true
