@@ -142,9 +142,6 @@ albumes:
       - foto: fotos/albumes/album-mw8qehnp/171476-mw8wmim2l6s.webp
         descripcion: ""
         autor: Yadiel Lorenzo
-      - foto: fotos/albumes/album-mw8rzoot/onn-etiqueta-nino-mw9758m5b0n.webp
-        descripcion: ""
-        autor: Yesenia Echevarria Echevarria
     recibe_fotos: true
 subidas:
   activo: true
