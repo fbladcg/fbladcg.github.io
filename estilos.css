@@ -432,3 +432,15 @@ button.boton:disabled { opacity: .7; cursor: progress; transform: none; }
 .bloque__icono { display: block; font-size: 2rem; line-height: 1; margin-bottom: 12px; }
 .bloque__separador { border: 0; height: 3px; width: 120px; margin: 0 auto; background: var(--gold); border-radius: 3px; }
 .bloque__vacio { border: 2px dashed var(--borde); border-radius: var(--radio); padding: 40px; text-align: center; color: var(--texto-suave); }
+
+/* ---------- Directiva deslizable en el celular ---------- */
+.deslizar { display: none; }
+@media (max-width: 760px) {
+  .rejilla--personas {
+    display: flex; overflow-x: auto; gap: 14px; margin: 0 -16px; padding: 4px 16px 18px;
+    scroll-snap-type: x mandatory; scroll-padding: 0 16px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .rejilla--personas::-webkit-scrollbar { display: none; }
+  .persona { flex: 0 0 68%; max-width: 260px; scroll-snap-align: start; }
+  .deslizar { display: block; text-align: center; margin: 4px 0 0; color: var(--texto-suave); font-size: .9rem; font-weight: 700; }
+}

@@ -281,7 +281,7 @@
             : '<div class="persona__foto persona__foto--iniciales" aria-hidden="true">' + t(iniciales(p.nombre)) + "</div>";
           return '<div class="persona">' + foto + '<h3 data-editar="' + r + 'nombre">' + t(p.nombre) +
             '</h3><p class="persona__puesto" data-editar="' + r + 'puesto">' + t(p.puesto) + "</p></div>";
-        }).join("") + "</div>", "seccion--gris"));
+        }).join("") + "</div>" + (directiva.length > 1 ? '<p class="deslizar" aria-hidden="true">Desliza para ver más →</p>' : ""), "seccion--gris"));
     }
 
     // ---- Logros ----
