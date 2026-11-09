@@ -141,7 +141,10 @@ albumes:
     descripcion: ""
     publicado: true
     portada: ""
-    fotos: []
+    fotos:
+      - foto: fotos/albumes/album-mw8rzoot/fbla-logo-horizontal-color-hires-mw9eigdbmiq.webp
+        descripcion: ""
+        autor: Owen Chaparro
     recibe_fotos: true
 subidas:
   activo: true
