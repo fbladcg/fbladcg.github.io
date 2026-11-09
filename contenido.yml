@@ -26,14 +26,6 @@ anuncios:
     fecha: 16 de noviembre de 2026
     texto: ""
 eventos:
-  - nombre: Goofy Games Locales
-    fecha: 1 de febrero de 2027
-    hora: 8:30 AM
-    lugar: Cancha Escolar
-    descripcion: Asistente Administrativo vs. Asistente de Contabilidad
-    documentos: []
-    tipo_fecha: dia
-    inicio: "2027-02-01"
   - nombre: Eventos Competitivos FBLA 2026
     fecha: 11 de diciembre de 2026
     hora: ""
@@ -58,6 +50,14 @@ eventos:
     tipo_fecha: dia
     inicio: "2027-01-27"
     documentos: []
+  - nombre: Goofy Games Locales
+    fecha: 1 de febrero de 2027
+    hora: 8:30 AM
+    lugar: Cancha Escolar
+    descripcion: Asistente Administrativo vs. Asistente de Contabilidad
+    documentos: []
+    tipo_fecha: dia
+    inicio: "2027-02-01"
   - nombre: Conferencia Estatal de Liderazgo FBLA 2027
     fecha: 5 – 7 de abril de 2027
     hora: ""
