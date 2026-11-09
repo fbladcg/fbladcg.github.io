@@ -160,6 +160,15 @@ albumes:
       - foto: fotos/albumes/album-mw8rzoot/img-8130-mw9od1tz0kl.webp
         descripcion: ""
         autor: Karina
+      - foto: fotos/albumes/album-mw8rzoot/dsc03202-mw9osd2c2qb.webp
+        descripcion: ""
+        autor: Leunamis
+      - foto: fotos/albumes/album-mw8rzoot/dsc03175-mw9osdhhmsi.webp
+        descripcion: ""
+        autor: Leunamis
+      - foto: fotos/albumes/album-mw8rzoot/dsc03170-mw9osec4hih.webp
+        descripcion: ""
+        autor: Leunamis
     recibe_fotos: true
 subidas:
   activo: true
