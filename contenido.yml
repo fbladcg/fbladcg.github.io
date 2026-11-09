@@ -169,6 +169,18 @@ albumes:
       - foto: fotos/albumes/album-mw8rzoot/dsc03170-mw9osec4hih.webp
         descripcion: ""
         autor: Leunamis
+      - foto: fotos/albumes/album-mw8rzoot/dsc03165-mw9pgqja4s3.webp
+        descripcion: ""
+        autor: Leunamis
+      - foto: fotos/albumes/album-mw8rzoot/dsc03150-mw9pgxhyyyw.webp
+        descripcion: ""
+        autor: Leunamis
+      - foto: fotos/albumes/album-mw8rzoot/dsc03168-mw9ph1jv075.webp
+        descripcion: ""
+        autor: Leunamis
+      - foto: fotos/albumes/album-mw8rzoot/dsc03169-mw9ph22oacg.webp
+        descripcion: ""
+        autor: Leunamis
     recibe_fotos: true
 subidas:
   activo: true
