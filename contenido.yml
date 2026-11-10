@@ -160,6 +160,24 @@ albumes:
       - foto: fotos/albumes/album-mw9nlsau/img-8128-mw9umyv5gbg.webp
         descripcion: ""
         autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8171-mwa0buw8lth.jpg
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8175-mwa0by1xfx8.jpg
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8190-mwa0cgslf05.jpg
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8210-mwa0d39ug7u.jpg
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8198-mwa0dloa9oo.jpg
+        descripcion: ""
+        autor: Bryanna Torres
+      - foto: fotos/albumes/album-mw9nlsau/img-8147-mwa0dzey8a1.jpg
+        descripcion: ""
+        autor: Bryanna Torres
     recibe_fotos: true
   - id: album-mw8qehnp
     titulo: Iniciación Local FBLA 2026
@@ -177,7 +195,22 @@ albumes:
     descripcion: Los estudiantes visten los colores azul y dorado de la organización estudiantil FBLA.
     publicado: true
     portada: ""
-    fotos: []
+    fotos:
+      - foto: fotos/albumes/album-mw8s2ll5/img-2393-mwa0eeqdog5.jpg
+        descripcion: ""
+        autor: Daniella
+      - foto: fotos/albumes/album-mw8s2ll5/100-1708-mwa0ejauvc1.jpg
+        descripcion: ""
+        autor: Daniella
+      - foto: fotos/albumes/album-mw8s2ll5/100-1711-mwa0eniherz.jpg
+        descripcion: ""
+        autor: Daniella
+      - foto: fotos/albumes/album-mw8s2ll5/100-1716-mwa0es15dbj.jpg
+        descripcion: ""
+        autor: Daniella
+      - foto: fotos/albumes/album-mw8s2ll5/100-1714-mwa0evr7m69.jpg
+        descripcion: ""
+        autor: Daniella
     recibe_fotos: true
   - id: album-mw8rzoot
     titulo: Goofy Games Estatales FBLA 2026
