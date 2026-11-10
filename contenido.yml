@@ -265,6 +265,27 @@ albumes:
       - foto: fotos/albumes/album-mw8rzoot/fdecfd59-31f1-4255-8a95-8157b6fec82e-mw9qk034n6k.webp
         descripcion: ""
         autor: Jaydeliz Caban
+      - foto: fotos/albumes/album-mw8rzoot/img-7912-mw9ziqx9h9h.webp
+        descripcion: ""
+        autor: Genesis Cardona
+      - foto: fotos/albumes/album-mw8rzoot/img-7862-mw9zis2zowm.webp
+        descripcion: ""
+        autor: Genesis Cardona
+      - foto: fotos/albumes/album-mw8rzoot/img-7938-mw9zisj43gi.webp
+        descripcion: ""
+        autor: Genesis Cardona
+      - foto: fotos/albumes/album-mw8rzoot/img-7940-mw9zita3gt9.webp
+        descripcion: ""
+        autor: Genesis Cardona
+      - foto: fotos/albumes/album-mw8rzoot/img-8043-mw9zivj3at7.webp
+        descripcion: ""
+        autor: Genesis Cardona
+      - foto: fotos/albumes/album-mw8rzoot/img-8045-mw9ziw5vbcj.webp
+        descripcion: ""
+        autor: Genesis Cardona
+      - foto: fotos/albumes/album-mw8rzoot/img-7981-mw9ziwufne9.webp
+        descripcion: ""
+        autor: Genesis Cardona
     recibe_fotos: true
 subidas:
   activo: true
