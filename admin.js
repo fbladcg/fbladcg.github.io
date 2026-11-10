@@ -1183,11 +1183,7 @@
         el("div", { class: "album-p__info" }, [
           el("strong", { texto: a.titulo || "(Álbum sin nombre)" }),
           el("span", { texto: [a.fecha, n + (n === 1 ? " foto" : " fotos")].filter(Boolean).join(" · ") }),
-          el("div", { class: "insignias" }, [
-            el("span", { class: a.publicado ? "insignia insignia--si" : "insignia", texto: a.publicado ? "Publicado" : "Borrador" }),
-            a.publicado && a.recibe_fotos !== false && (datos.subidas || {}).activo === true
-              ? el("span", { class: "insignia", texto: "📤 Recibe fotos" }) : null
-          ])
+          interruptoresAlbum(a)
         ]),
         el("div", { class: "album-p__botones" }, [
           el("button", { class: "btn btn--azul btn--chico", type: "button",
@@ -1205,6 +1201,35 @@
       ]));
     });
     panel.appendChild(rejilla);
+  }
+
+  // Interruptor (toggle) accesible.
+  function interruptor(texto, encendido, alCambiar, opciones) {
+    opciones = opciones || {};
+    var input = el("input", { type: "checkbox", role: "switch", class: "interruptor__input", disabled: opciones.desactivado ? true : null });
+    input.checked = !!encendido && !opciones.desactivado;
+    input.addEventListener("change", function () { alCambiar(input.checked); });
+    return el("label", { class: "interruptor" + (opciones.desactivado ? " interruptor--off" : ""), title: opciones.titulo || null }, [
+      input, el("span", { class: "interruptor__pista", "aria-hidden": "true" }), el("span", { class: "interruptor__texto", texto: texto })
+    ]);
+  }
+
+  // «Publicado» y «Recibe fotos» de un álbum, para cambiarlos sin abrirlo.
+  function interruptoresAlbum(a) {
+    var envios = (datos.subidas || {}).activo === true;
+    var sinFotos = !fotosDe(a).length;
+    return el("div", { class: "interruptores" }, [
+      interruptor("Publicado", a.publicado === true, function (v) {
+        a.publicado = v; marcarCambio(); pintar();
+        if (v && sinFotos) avisar("El álbum se verá en la página cuando tenga al menos una foto.");
+      }),
+      interruptor("📤 Recibe fotos", a.recibe_fotos !== false, function (v) {
+        a.recibe_fotos = v; marcarCambio(); pintar();
+      }, {
+        desactivado: !a.publicado || !envios,
+        titulo: !envios ? "Activa «Permitir que los miembros envíen fotos» en Fotos de miembros" : !a.publicado ? "Publica el álbum para que reciba fotos" : null
+      })
+    ]);
   }
 
   function pintarAlbum(panel, a) {
@@ -1657,6 +1682,10 @@
 
   // ---------- Fotos de miembros ----------
   function pintarMiembros(panel) {
+    // Al activar o desactivar los envíos, se actualizan los interruptores de los álbumes.
+    panel.querySelectorAll("input[type=checkbox]").forEach(function (c) {
+      c.addEventListener("change", function () { var y = window.scrollY; pintar(); window.scrollTo(0, y); });
+    });
     var paginaSubir = location.origin + location.pathname.replace(/admin(\.html)?$/i, "") + "subir.html";
     panel.appendChild(el("div", { class: "aviso aviso--info" }, [
       "Enlace para compartir con los miembros: ",
@@ -1664,6 +1693,27 @@
       el("br"),
       "En cada álbum de la página también aparece el botón «Subir mis fotos» cuando esta opción está activa y el álbum está publicado."
     ]));
+
+    // Qué álbumes aceptan envíos (sin tener que abrir cada uno).
+    var albumes = (datos.albumes || []).filter(function (a) { return a && a.id; });
+    panel.appendChild(el("h3", { class: "subtitulo", texto: "Álbumes que reciben fotos" }));
+    if ((datos.subidas || {}).activo !== true) {
+      panel.appendChild(el("p", { class: "campo__nota", texto: "Activa «Permitir que los miembros envíen fotos» (arriba) para que los álbumes puedan recibir fotos." }));
+    }
+    if (!albumes.length) {
+      panel.appendChild(el("div", { class: "vacio", texto: "Todavía no hay álbumes. Créalos en «Álbumes de fotos»." }));
+    } else {
+      panel.appendChild(el("div", { class: "albumes-envios" }, albumes.map(function (a) {
+        var n = fotosDe(a).length;
+        return el("div", { class: "album-envio" }, [
+          el("div", { class: "album-envio__info" }, [
+            el("strong", { texto: a.titulo || "(Álbum sin nombre)" }),
+            el("span", { texto: [a.fecha, n + (n === 1 ? " foto" : " fotos")].filter(Boolean).join(" · ") })
+          ]),
+          interruptoresAlbum(a)
+        ]);
+      })));
+    }
 
     var zona = el("div", { class: "pendientes" });
     panel.appendChild(el("div", { class: "fila-titulo" }, [

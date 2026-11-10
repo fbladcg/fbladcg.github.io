@@ -92,6 +92,21 @@
     .album-p__info strong { color: var(--navy); overflow-wrap: anywhere; }
     .album-p__info span { color: var(--suave); font-size: .9rem; }
     .album-p__botones { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .interruptores { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+    .interruptor { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: .88rem; font-weight: 700; color: var(--navy); user-select: none; }
+    .interruptor__input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .interruptor__pista { position: relative; width: 40px; height: 22px; border-radius: 999px; background: #c9d1e0; transition: background .2s; flex: none; }
+    .interruptor__pista::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+    .interruptor__input:checked + .interruptor__pista { background: #1f9d55; }
+    .interruptor__input:checked + .interruptor__pista::after { transform: translateX(18px); }
+    .interruptor__input:focus-visible + .interruptor__pista { outline: 3px solid rgba(34,106,221,.4); outline-offset: 2px; }
+    .interruptor--off { cursor: not-allowed; opacity: .5; }
+    .albumes-envios { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 26px; }
+    .album-envio { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border: 1.5px solid var(--borde); border-radius: var(--radio); padding: 10px 14px; }
+    .album-envio__info { display: flex; flex-direction: column; min-width: 0; }
+    .album-envio__info strong { color: var(--navy); }
+    .album-envio__info span { color: var(--suave); font-size: .9rem; }
+    .album-envio .interruptores { margin-top: 0; }
     .insignia { align-self: flex-start; font-size: .75rem !important; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--gris); color: var(--suave) !important; border: 1px solid var(--borde); }
     .insignia--si { background: var(--gold); color: var(--navy) !important; border-color: var(--gold); }
     .insignias { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -402,6 +417,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js" integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="fechas.js?v=4"></script>
   <script src="competencias.js?v=1"></script>
-  <script src="admin.js?v=28"></script>
+  <script src="admin.js?v=29"></script>
 </body>
 </html>
