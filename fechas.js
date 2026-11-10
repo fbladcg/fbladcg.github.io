@@ -116,7 +116,8 @@
       }
       return { grande: a.getDate() + " " + MESES_CORTOS[a.getMonth()] + " – " + b.getDate() + " " + MESES_CORTOS[b.getMonth()], chico: String(b.getFullYear()), largo: true };
     }
-    if (f.tipo === "mes") return { grande: MESES_CORTOS[f.mes.m].toUpperCase(), chico: String(f.mes.y) };
+    // Sin día exacto: el mes va abajo (dorado, como en los demás eventos) y arriba un calendario.
+    if (f.tipo === "mes") return { grande: "📅", chico: MESES_CORTOS[f.mes.m] + " " + f.mes.y };
     return { grande: "📅", chico: f.texto };
   }
 
