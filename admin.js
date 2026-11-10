@@ -1862,10 +1862,12 @@
       var aprobada = p.estado === "aprobada";
       var nombre = el("input", { type: "text", maxlength: "80", placeholder: "Nombre del autor", "aria-label": "Nombre del autor (crédito)" });
       nombre.value = p.nombre || "";
+      sel.addEventListener("change", function () { p.album = sel.value; });
+      nombre.addEventListener("input", function () { p.nombre = nombre.value; });
       var info = [p.albumTitulo ? "Para: " + p.albumTitulo : "", p.nombre ? "Enviada por: " + p.nombre : "", p.fecha ? new Date(p.fecha).toLocaleDateString("es-PR") : ""]
         .filter(Boolean).join(" · ");
       rejilla.appendChild(el("div", { class: "foto-p" + (aprobada ? " foto-p--aprobada" : ""), "data-pendiente": p.id }, [
-        el("div", { class: "foto-p__marco", "data-carga": p.datos || p.vista ? "lista" : p.error ? "error" : p.cargando ? "cargando" : "espera" }, [
+        el("div", { class: "foto-p__marco", title: "Ver en grande", onclick: function () { if (p.datos || p.vista) abrirVisorPendientes(p, zona); }, "data-carga": p.datos || p.vista ? "lista" : p.error ? "error" : p.cargando ? "cargando" : "espera" }, [
           el("img", { src: (p.datos || p.vista ? "data:" + (p.datos ? p.tipo : p.tipoVista) + ";base64," + (p.datos || p.vista) : null), alt: "Foto enviada" }),
           el("div", { class: "foto-p__cargando" }, [
             el("span", { class: "foto-p__estado-texto" }),
@@ -1892,10 +1894,11 @@
 
   function aprobar(p, albumId, zona) {
     var a = (datos.albumes || []).filter(function (x) { return x.id === albumId; })[0];
-    if (!a) return avisar("Escoge el álbum donde va la foto.", true);
-    if (!p.datos && !p.vista) return avisar("La foto todavía se está cargando. Espera un momento.", true);
-    if (modo !== "github") return avisar("Entra con tu token para aprobar fotos.", true);
-    if (p.estado === "aprobando") return;
+    if (!a) { avisar("Escoge el álbum donde va la foto.", true); return Promise.resolve(false); }
+    if (!p.datos && !p.vista) { avisar("La foto todavía se está cargando. Espera un momento.", true); return Promise.resolve(false); }
+    if (modo !== "github") { avisar("Entra con tu token para aprobar fotos.", true); return Promise.resolve(false); }
+    if (p.estado === "aprobando") return Promise.resolve(false);
+    p.album = albumId;
     p.estado = "aprobando";
     // La vista previa es liviana: para publicar se baja la foto original (calidad completa).
     var original = p.datos ? Promise.resolve() : (function () {
@@ -1905,7 +1908,7 @@
         p.datos = r.datos; p.tipo = r.tipo;
       });
     })();
-    original.then(function () {
+    return original.then(function () {
       ocupado("Preparando la foto…");
       // Se guarda en WebP (la mitad del espacio, misma calidad).
       return aWebP(p.tipo, p.datos);
@@ -1920,21 +1923,148 @@
       marcarCambio();
       pintarPendientes(zona);
       avisar("Foto añadida a «" + (a.titulo || "álbum") + "». Recuerda «Guardar cambios».");
+      return true;
     }).catch(function (e) {
       ocupado(null);
       p.estado = "pendiente";
       avisar("No se pudo descargar la foto original: " + e.message, true);
+      return false;
     });
   }
 
   function rechazar(p, zona) {
-    if (!confirm("¿Rechazar esta foto? Se borrará y no se publicará.")) return;
+    if (!confirm("¿Rechazar esta foto? Se borrará y no se publicará.")) return Promise.resolve(false);
     ocupado("Rechazando…");
-    script("resolver", { id: p.id, aprobar: false }).then(function () {
+    return script("resolver", { id: p.id, aprobar: false }).then(function () {
       p.estado = "rechazada";
       pintarPendientes(zona);
-    }).catch(function (e) { avisar(e.message, true); })
-      .then(function () { ocupado(null); });
+      return true;
+    }).catch(function (e) { avisar(e.message, true); return false; })
+      .then(function (ok) { ocupado(null); return ok; });
+  }
+
+  // ---------- Visor (galería) de fotos pendientes ----------
+  // Mismo formato que la galería de la página: foto grande, ‹ ›, deslizar en el celular.
+  // Muestra la vista previa y en seguida baja la original (calidad completa).
+  var visorP = null;
+  function abrirVisorPendientes(p, zona) {
+    var lista = function () { return (pendientes || []).filter(function (x) { return x.estado !== "rechazada"; }); };
+    var pos = Math.max(0, lista().indexOf(p));
+    if (visorP) visorP.remove();
+    var img = el("img", { alt: "Foto enviada" });
+    var pie = el("figcaption");
+    var barra = el("div", { class: "barra-progreso visor__barra", role: "progressbar", "aria-label": "Descargando la foto original" }, [el("span")]);
+    var calidad = el("span", { class: "visor__calidad" });
+    var cuenta = el("span", { class: "visor__cuenta" });
+    var sel = el("select", { class: "visor__album", "aria-label": "Álbum para esta foto" });
+    var credito = el("input", { type: "text", class: "visor__credito", maxlength: "80", placeholder: "Crédito (autor)", "aria-label": "Nombre del autor (crédito)" });
+    var bAprobar = el("button", { class: "btn btn--azul", type: "button" }, ["✓ Aprobar"]);
+    var bRechazar = el("button", { class: "btn btn--peligro", type: "button" }, ["✕ Rechazar"]);
+    var estado = el("strong", { class: "visor__ok" });
+    var ant = el("button", { class: "visor__btn visor__ant", type: "button", "aria-label": "Foto anterior" }, ["‹"]);
+    var sig = el("button", { class: "visor__btn visor__sig", type: "button", "aria-label": "Foto siguiente" }, ["›"]);
+    var cerrarB = el("button", { class: "visor__btn visor__cerrar", type: "button", "aria-label": "Cerrar" }, ["✕"]);
+    visorP = el("div", { class: "visor", role: "dialog", "aria-modal": "true", "aria-label": "Foto enviada por un miembro" }, [
+      cerrarB, ant,
+      el("figure", { class: "visor__fig" }, [img, calidad, barra, pie]),
+      sig,
+      el("div", { class: "visor__pie" }, [cuenta, sel, credito, estado, bRechazar, bAprobar])
+    ]);
+    document.body.appendChild(visorP);
+    document.body.style.overflow = "hidden";
+
+    var cerrar = function () {
+      if (!visorP) return;
+      visorP.remove(); visorP = null;
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", teclas);
+    };
+    var actual = function () { return lista()[pos]; };
+    var mostrar = function () {
+      var l = lista();
+      if (!l.length) return cerrar();
+      pos = (pos + l.length) % l.length;
+      var f = l[pos];
+      img.src = f.datos ? "data:" + f.tipo + ";base64," + f.datos : f.vista ? "data:" + f.tipoVista + ";base64," + f.vista : "";
+      pie.textContent = [f.albumTitulo ? "Para: " + f.albumTitulo : "", f.nombre ? "📷 " + f.nombre : "", f.fecha ? new Date(f.fecha).toLocaleDateString("es-PR") : "", f.nota ? "«" + f.nota + "»" : ""].filter(Boolean).join(" · ");
+      cuenta.textContent = (pos + 1) + " de " + l.length;
+      ant.hidden = sig.hidden = l.length < 2;
+      sel.innerHTML = "";
+      sel.appendChild(el("option", { value: "", texto: "— Escoge un álbum —" }));
+      (datos.albumes || []).filter(function (a) { return a && a.id; }).forEach(function (a) {
+        var o = el("option", { value: a.id, texto: a.titulo || "(sin nombre)" });
+        if (a.id === f.album) o.selected = true;
+        sel.appendChild(o);
+      });
+      credito.value = f.nombre || "";
+      var aprobada = f.estado === "aprobada";
+      sel.hidden = credito.hidden = bAprobar.hidden = bRechazar.hidden = aprobada;
+      estado.hidden = !aprobada;
+      estado.textContent = "✓ Aprobada — se publica al «Guardar cambios»";
+      calidad.textContent = "";
+      barra.hidden = true;
+      if (!f.datos) bajarOriginal(f);
+    };
+    // Baja la foto original para verla con toda su calidad (y deja lista la aprobación).
+    var bajarOriginal = function (f) {
+      if (f.bajando) { barra.hidden = false; calidad.textContent = "Cargando la foto original…"; return; }
+      f.bajando = true;
+      barra.hidden = false;
+      calidad.textContent = "Cargando la foto original…";
+      barra.querySelector("span").style.width = "0%";
+      script("foto", { id: f.id, _esperado: f.tamano ? Math.round(f.tamano * 4 / 3) + 200 : 0, _progreso: function (x) {
+        if (visorP && actual() === f) barra.querySelector("span").style.width = Math.round((x || 0) * 100) + "%";
+      } }).then(function (r) {
+        f.datos = r.datos; f.tipo = r.tipo;
+        if (visorP && actual() === f) { img.src = "data:" + f.tipo + ";base64," + f.datos; barra.hidden = true; calidad.textContent = ""; }
+      }).catch(function () {
+        if (visorP && actual() === f) { barra.hidden = true; calidad.textContent = "No se pudo cargar la original; se muestra la vista previa."; }
+      }).then(function () { f.bajando = false; });
+    };
+    var mover = function (paso) { pos += paso; mostrar(); };
+    // Tras aprobar o rechazar, pasa a la siguiente foto que falte por revisar.
+    var siguientePendiente = function () {
+      var l = lista();
+      if (!l.length) return cerrar();
+      for (var k = 0; k < l.length; k++) {
+        var j = (pos + k) % l.length;
+        if (l[j].estado !== "aprobada") { pos = j; return mostrar(); }
+      }
+      avisar("¡Revisaste todas las fotos! Recuerda «Guardar cambios».");
+      cerrar();
+    };
+    sel.addEventListener("change", function () { actual().album = sel.value; });
+    credito.addEventListener("input", function () { actual().nombre = credito.value; });
+    bAprobar.addEventListener("click", function () {
+      var f = actual();
+      f.nombre = credito.value.trim();
+      aprobar(f, sel.value, document.querySelector("#panel .pendientes") || zona).then(function (ok) { if (ok && visorP) { pos = lista().indexOf(f); siguientePendiente(); } });
+    });
+    bRechazar.addEventListener("click", function () {
+      var f = actual();
+      rechazar(f, document.querySelector("#panel .pendientes") || zona).then(function (ok) { if (ok && visorP) siguientePendiente(); });
+    });
+    ant.addEventListener("click", function () { mover(-1); });
+    sig.addEventListener("click", function () { mover(1); });
+    cerrarB.addEventListener("click", cerrar);
+    visorP.addEventListener("click", function (e) { if (e.target === visorP) cerrar(); });
+    var x0 = null;
+    visorP.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    visorP.addEventListener("touchend", function (e) {
+      if (x0 === null || e.target.closest(".visor__pie")) { x0 = null; return; }
+      var dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 50) mover(dx < 0 ? 1 : -1);
+      x0 = null;
+    });
+    var teclas = function (e) {
+      if (!visorP || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) { if (e.key === "Escape") cerrar(); return; }
+      if (e.key === "Escape") cerrar();
+      else if (e.key === "ArrowRight") mover(1);
+      else if (e.key === "ArrowLeft") mover(-1);
+    };
+    document.addEventListener("keydown", teclas);
+    mostrar();
+    cerrarB.focus();
   }
 
   // ---------- Fotos ----------
