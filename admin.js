@@ -1781,7 +1781,7 @@
   var cargandoPendientes = false;
   function cargarImagenesPendientes(zona) {
     if (cargandoPendientes) return;
-    var cola = (pendientes || []).filter(function (p) { return !p.datos && p.estado !== "rechazada"; });
+    var cola = (pendientes || []).filter(function (p) { return !p.datos && !p.vista && p.estado !== "rechazada"; });
     if (!cola.length) return;
     cargandoPendientes = true;
     // La sección puede volver a dibujarse mientras se carga: siempre se usa la zona visible.
@@ -1799,7 +1799,7 @@
     var pintarMarco = function (p, fraccion) {
       var m = marco(p);
       if (!m) return;
-      m.setAttribute("data-carga", p.datos ? "lista" : p.error ? "error" : p.cargando ? "cargando" : "espera");
+      m.setAttribute("data-carga", p.datos || p.vista ? "lista" : p.error ? "error" : p.cargando ? "cargando" : "espera");
       var b = m.querySelector(".foto-p__barra span");
       if (b) {
         b.classList.toggle("indeterminada", p.cargando && fraccion === null);
@@ -1812,12 +1812,17 @@
         if (p.estado === "rechazada") return;
         p.cargando = true;
         pintarMarco(p, 0);
-        var esperado = p.tamano ? Math.round(p.tamano * 4 / 3) + 200 : 0;
-        return script("foto", { id: p.id, _esperado: esperado, _progreso: function (f) { pintarMarco(p, f); general(i, f || 0); } }).then(function (r) {
-          p.datos = r.datos;
-          p.tipo = r.tipo;
+        // Primero la vista previa liviana; la foto original se descarga solo al aprobar.
+        // (Si el script aún no tiene «vista», se usa la foto completa.)
+        var avance = function (f) { pintarMarco(p, f); general(i, f || 0); };
+        return script("vista", { id: p.id, lado: 700, _progreso: avance }).catch(function (e) {
+          if (!/desconocida/i.test(e.message)) throw e;
+          return script("foto", { id: p.id, _esperado: p.tamano ? Math.round(p.tamano * 4 / 3) + 200 : 0, _progreso: avance });
+        }).then(function (r) {
+          if (r.vista) { p.vista = r.datos; p.tipoVista = r.tipo; }
+          else { p.datos = r.datos; p.tipo = r.tipo; }
           var img = zonaActual().querySelector('[data-pendiente="' + p.id + '"] img');
-          if (img) img.src = "data:" + p.tipo + ";base64," + p.datos;
+          if (img) img.src = (p.datos || p.vista ? "data:" + (p.datos ? p.tipo : p.tipoVista) + ";base64," + (p.datos || p.vista) : null);
         }).catch(function () { p.error = true; }).then(function () {
           p.cargando = false;
           pintarMarco(p);
@@ -1827,7 +1832,7 @@
     }, Promise.resolve()).then(function () {
       cargandoPendientes = false;
       // Si llegaron fotos nuevas mientras tanto, se cargan también.
-      if ((pendientes || []).some(function (p) { return !p.datos && !p.error && p.estado !== "rechazada"; })) cargarImagenesPendientes(zona);
+      if ((pendientes || []).some(function (p) { return !p.datos && !p.vista && !p.error && p.estado !== "rechazada"; })) cargarImagenesPendientes(zona);
     });
   }
 
@@ -1840,7 +1845,7 @@
       return;
     }
     var albumes = (datos.albumes || []).filter(function (a) { return a && a.id; });
-    var faltan = lista.filter(function (p) { return !p.datos; }).length;
+    var faltan = lista.filter(function (p) { return !p.datos && !p.vista; }).length;
     zona.appendChild(el("div", { class: "pendientes__progreso", hidden: !faltan || !cargandoPendientes ? true : null, role: "status", "aria-live": "polite" }, [
       el("p", { class: "pendientes__texto", texto: "Cargando fotos…" }),
       el("div", { class: "barra-progreso", role: "progressbar", "aria-label": "Fotos cargadas" }, [el("span")])
@@ -1860,8 +1865,8 @@
       var info = [p.albumTitulo ? "Para: " + p.albumTitulo : "", p.nombre ? "Enviada por: " + p.nombre : "", p.fecha ? new Date(p.fecha).toLocaleDateString("es-PR") : ""]
         .filter(Boolean).join(" · ");
       rejilla.appendChild(el("div", { class: "foto-p" + (aprobada ? " foto-p--aprobada" : ""), "data-pendiente": p.id }, [
-        el("div", { class: "foto-p__marco", "data-carga": p.datos ? "lista" : p.error ? "error" : p.cargando ? "cargando" : "espera" }, [
-          el("img", { src: p.datos ? "data:" + p.tipo + ";base64," + p.datos : null, alt: "Foto enviada" }),
+        el("div", { class: "foto-p__marco", "data-carga": p.datos || p.vista ? "lista" : p.error ? "error" : p.cargando ? "cargando" : "espera" }, [
+          el("img", { src: (p.datos || p.vista ? "data:" + (p.datos ? p.tipo : p.tipoVista) + ";base64," + (p.datos || p.vista) : null), alt: "Foto enviada" }),
           el("div", { class: "foto-p__cargando" }, [
             el("span", { class: "foto-p__estado-texto" }),
             el("div", { class: "foto-p__barra" }, [el("span")]),
@@ -1888,12 +1893,24 @@
   function aprobar(p, albumId, zona) {
     var a = (datos.albumes || []).filter(function (x) { return x.id === albumId; })[0];
     if (!a) return avisar("Escoge el álbum donde va la foto.", true);
-    if (!p.datos) return avisar("La foto todavía se está cargando. Espera un momento.", true);
+    if (!p.datos && !p.vista) return avisar("La foto todavía se está cargando. Espera un momento.", true);
     if (modo !== "github") return avisar("Entra con tu token para aprobar fotos.", true);
     if (p.estado === "aprobando") return;
     p.estado = "aprobando";
-    // Se guarda en WebP (la mitad del espacio, misma calidad).
-    aWebP(p.tipo, p.datos).then(function (f) {
+    // La vista previa es liviana: para publicar se baja la foto original (calidad completa).
+    var original = p.datos ? Promise.resolve() : (function () {
+      ocupado("Descargando la foto original…", 0);
+      return script("foto", { id: p.id, _esperado: p.tamano ? Math.round(p.tamano * 4 / 3) + 200 : 0,
+        _progreso: function (f) { ocupado("Descargando la foto original…", f); } }).then(function (r) {
+        p.datos = r.datos; p.tipo = r.tipo;
+      });
+    })();
+    original.then(function () {
+      ocupado("Preparando la foto…");
+      // Se guarda en WebP (la mitad del espacio, misma calidad).
+      return aWebP(p.tipo, p.datos);
+    }).then(function (f) {
+      ocupado(null);
       var ruta = "fotos/albumes/" + a.id + "/" + nombreSeguro(p.archivo || "foto-miembro", f.ext);
       porSubir[ruta] = f.datos;
       vistas[ruta] = "data:" + f.tipo + ";base64," + f.datos;
@@ -1903,6 +1920,10 @@
       marcarCambio();
       pintarPendientes(zona);
       avisar("Foto añadida a «" + (a.titulo || "álbum") + "». Recuerda «Guardar cambios».");
+    }).catch(function (e) {
+      ocupado(null);
+      p.estado = "pendiente";
+      avisar("No se pudo descargar la foto original: " + e.message, true);
     });
   }
 

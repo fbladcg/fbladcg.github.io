@@ -79,6 +79,7 @@ function doPost(e) {
       verificarAdmin(d.token);
       if (d.accion === 'pendientes') r = pendientes();
       else if (d.accion === 'foto') r = foto(d.id);
+      else if (d.accion === 'vista') r = vista(d.id, d.lado);
       else if (d.accion === 'resolver') r = resolver(d.id, d.aprobar === true);
       else if (d.accion === 'visitas') r = { visitas: leerVisitas(PropertiesService.getScriptProperties()),
         hoy: Utilities.formatDate(new Date(), 'America/Puerto_Rico', 'yyyy-MM-dd') };
@@ -202,6 +203,26 @@ function foto(id) {
   var f = archivoPendiente(id);
   var blob = f.getBlob();
   return { tipo: blob.getContentType(), datos: Utilities.base64Encode(blob.getBytes()) };
+}
+
+// Vista previa más liviana (para el panel): la miniatura de Drive en el tamaño pedido.
+// Si Drive todavía no la tiene lista, se manda la foto original.
+function vista(id, lado) {
+  var f = archivoPendiente(id);
+  lado = Math.max(200, Math.min(1200, Number(lado) || 600));
+  try {
+    var token = ScriptApp.getOAuthToken();
+    var opciones = { headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true };
+    var meta = JSON.parse(UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + f.getId() + '?fields=thumbnailLink', opciones).getContentText());
+    if (meta.thumbnailLink) {
+      var r = UrlFetchApp.fetch(meta.thumbnailLink.replace(/=s\d+[^=]*$/, '') + '=s' + lado, opciones);
+      if (r.getResponseCode() === 200) {
+        var b = r.getBlob();
+        return { tipo: b.getContentType() || 'image/jpeg', datos: Utilities.base64Encode(b.getBytes()), vista: true };
+      }
+    }
+  } catch (e) {}
+  return foto(id);
 }
 
 // Aprobada o rechazada, la foto sale de Drive (va a la papelera; Google la borra a los 30 días).
