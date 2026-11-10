@@ -1740,15 +1740,21 @@
     var zona = el("div", { class: "pendientes" });
     panel.appendChild(el("div", { class: "fila-titulo" }, [
       el("h3", { class: "subtitulo", texto: "Fotos esperando aprobación" }),
-      el("button", { class: "btn btn--azul", type: "button", onclick: function () { buscarPendientes(zona); } }, ["🔄 Buscar fotos nuevas"])
+      el("button", { class: "btn btn--azul buscar-fotos", type: "button", onclick: function () { buscarPendientes(zona); } }, ["🔄 Buscar fotos nuevas"])
     ]));
     panel.appendChild(zona);
-    if (pendientes) pintarPendientes(zona);
-    else zona.appendChild(el("div", { class: "vacio", texto: "Haz clic en «Buscar fotos nuevas»." }));
+    if (pendientes) { pintarPendientes(zona); cargarImagenesPendientes(zona); }
+    else zona.appendChild(el("div", { class: "vacio", texto: "Buscando fotos nuevas…" }));
+    // Al entrar a esta sección se buscan fotos solas (no más de una vez cada 30 segundos).
+    if (Date.now() - buscadoAl > 30000) buscarPendientes(zona, true);
   }
 
-  function buscarPendientes(zona) {
-    ocupado("Buscando fotos…");
+  var buscadoAl = 0;
+  function buscarPendientes(zona, silencioso) {
+    buscadoAl = Date.now();
+    if (!silencioso) ocupado("Buscando fotos…");
+    var boton = $("panel").querySelector(".buscar-fotos");
+    if (boton) { boton.disabled = true; boton.textContent = "🔄 Buscando…"; }
     script("pendientes").then(function (r) {
       var ya = {};
       (pendientes || []).forEach(function (p) { ya[p.id] = p; });
@@ -1758,10 +1764,17 @@
         p.estado = "pendiente";
         return p;
       });
+      if (!zona.isConnected) { actualizarContadores(); return; }   // ya se salió de la sección
       pintarPendientes(zona);
       cargarImagenesPendientes(zona);
-    }).catch(function (e) { avisar(e.message, true); })
-      .then(function () { ocupado(null); });
+    }).catch(function (e) {
+      avisar(e.message, true);
+      if (zona.isConnected && !pendientes) { zona.innerHTML = ""; zona.appendChild(el("div", { class: "vacio", texto: "No se pudieron buscar las fotos. Usa «Buscar fotos nuevas» para intentarlo otra vez." })); }
+    }).then(function () {
+      ocupado(null);
+      var b = $("panel").querySelector(".buscar-fotos");
+      if (b) { b.disabled = false; b.textContent = "🔄 Buscar fotos nuevas"; }
+    });
   }
 
   // Descarga las fotos pendientes una por una, con una barra en cada foto y otra general.
@@ -1771,16 +1784,18 @@
     var cola = (pendientes || []).filter(function (p) { return !p.datos && p.estado !== "rechazada"; });
     if (!cola.length) return;
     cargandoPendientes = true;
+    // La sección puede volver a dibujarse mientras se carga: siempre se usa la zona visible.
+    var zonaActual = function () { return document.querySelector("#panel .pendientes") || zona; };
     cola.forEach(function (p) { p.error = false; });
     var total = cola.length;
     var general = function (hechas, fraccion) {
-      var g = zona.querySelector(".pendientes__progreso");
+      var g = zonaActual().querySelector(".pendientes__progreso");
       if (!g) return;
       g.hidden = hechas >= total;
       g.querySelector(".pendientes__texto").textContent = "Cargando fotos: " + Math.min(hechas + 1, total) + " de " + total + "…";
       g.querySelector(".barra-progreso span").style.width = Math.round(((hechas + (fraccion || 0)) / total) * 100) + "%";
     };
-    var marco = function (p) { return zona.querySelector('[data-pendiente="' + p.id + '"] .foto-p__marco'); };
+    var marco = function (p) { return zonaActual().querySelector('[data-pendiente="' + p.id + '"] .foto-p__marco'); };
     var pintarMarco = function (p, fraccion) {
       var m = marco(p);
       if (!m) return;
@@ -1801,7 +1816,7 @@
         return script("foto", { id: p.id, _esperado: esperado, _progreso: function (f) { pintarMarco(p, f); general(i, f || 0); } }).then(function (r) {
           p.datos = r.datos;
           p.tipo = r.tipo;
-          var img = zona.querySelector('[data-pendiente="' + p.id + '"] img');
+          var img = zonaActual().querySelector('[data-pendiente="' + p.id + '"] img');
           if (img) img.src = "data:" + p.tipo + ";base64," + p.datos;
         }).catch(function () { p.error = true; }).then(function () {
           p.cargando = false;
