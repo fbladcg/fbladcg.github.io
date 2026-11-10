@@ -365,14 +365,36 @@
     // El script verifica con GitHub que este token puede editar la página.
     var cuerpo = { accion: accion, token: sesion.token };
     Object.keys(extra || {}).forEach(function (k) { cuerpo[k] = extra[k]; });
+    var alAvanzar = extra && extra._progreso, esperado = extra && extra._esperado;
+    delete cuerpo._progreso; delete cuerpo._esperado;
     return fetch(url, { method: "POST", body: JSON.stringify(cuerpo) })
-      .then(function (r) { return r.json(); }, function () {
+      .then(function (r) { return alAvanzar && r.body && r.body.getReader ? leerConProgreso(r, alAvanzar, esperado) : r.json(); }, function () {
         throw new Error("No se pudo conectar con el script de Google. Revisa el enlace y tu internet.");
       })
       .then(function (j) {
         if (!j || !j.ok) throw new Error((j && j.error) || "El script de Google respondió con un error.");
         return j;
       });
+  }
+
+  // Lee la respuesta poco a poco para mover la barra (bytes recibidos / bytes esperados).
+  function leerConProgreso(r, alAvanzar, esperado) {
+    var total = +r.headers.get("Content-Length") || esperado || 0;
+    var lector = r.body.getReader(), partes = [], recibidos = 0;
+    var paso = function () {
+      return lector.read().then(function (x) {
+        if (x.done) return;
+        partes.push(x.value);
+        recibidos += x.value.length;
+        alAvanzar(total ? Math.min(0.99, recibidos / total) : null);
+        return paso();
+      });
+    };
+    return paso().then(function () {
+      var todo = new Uint8Array(recibidos), pos = 0;
+      partes.forEach(function (p) { todo.set(p, pos); pos += p.length; });
+      return JSON.parse(new TextDecoder("utf-8").decode(todo));
+    });
   }
 
   // ---------- Entrar / salir ----------
@@ -1742,17 +1764,56 @@
       .then(function () { ocupado(null); });
   }
 
+  // Descarga las fotos pendientes una por una, con una barra en cada foto y otra general.
+  var cargandoPendientes = false;
   function cargarImagenesPendientes(zona) {
-    (pendientes || []).filter(function (p) { return !p.datos; }).reduce(function (cadena, p) {
+    if (cargandoPendientes) return;
+    var cola = (pendientes || []).filter(function (p) { return !p.datos && p.estado !== "rechazada"; });
+    if (!cola.length) return;
+    cargandoPendientes = true;
+    cola.forEach(function (p) { p.error = false; });
+    var total = cola.length;
+    var general = function (hechas, fraccion) {
+      var g = zona.querySelector(".pendientes__progreso");
+      if (!g) return;
+      g.hidden = hechas >= total;
+      g.querySelector(".pendientes__texto").textContent = "Cargando fotos: " + Math.min(hechas + 1, total) + " de " + total + "…";
+      g.querySelector(".barra-progreso span").style.width = Math.round(((hechas + (fraccion || 0)) / total) * 100) + "%";
+    };
+    var marco = function (p) { return zona.querySelector('[data-pendiente="' + p.id + '"] .foto-p__marco'); };
+    var pintarMarco = function (p, fraccion) {
+      var m = marco(p);
+      if (!m) return;
+      m.setAttribute("data-carga", p.datos ? "lista" : p.error ? "error" : p.cargando ? "cargando" : "espera");
+      var b = m.querySelector(".foto-p__barra span");
+      if (b) {
+        b.classList.toggle("indeterminada", p.cargando && fraccion === null);
+        b.style.width = p.cargando && fraccion !== null && fraccion !== undefined ? Math.round(fraccion * 100) + "%" : p.cargando ? "" : "0%";
+      }
+    };
+    general(0, 0);
+    cola.reduce(function (cadena, p, i) {
       return cadena.then(function () {
-        return script("foto", { id: p.id }).then(function (r) {
+        if (p.estado === "rechazada") return;
+        p.cargando = true;
+        pintarMarco(p, 0);
+        var esperado = p.tamano ? Math.round(p.tamano * 4 / 3) + 200 : 0;
+        return script("foto", { id: p.id, _esperado: esperado, _progreso: function (f) { pintarMarco(p, f); general(i, f || 0); } }).then(function (r) {
           p.datos = r.datos;
           p.tipo = r.tipo;
           var img = zona.querySelector('[data-pendiente="' + p.id + '"] img');
           if (img) img.src = "data:" + p.tipo + ";base64," + p.datos;
-        }).catch(function () {});
+        }).catch(function () { p.error = true; }).then(function () {
+          p.cargando = false;
+          pintarMarco(p);
+          general(i + 1, 0);
+        });
       });
-    }, Promise.resolve());
+    }, Promise.resolve()).then(function () {
+      cargandoPendientes = false;
+      // Si llegaron fotos nuevas mientras tanto, se cargan también.
+      if ((pendientes || []).some(function (p) { return !p.datos && !p.error && p.estado !== "rechazada"; })) cargarImagenesPendientes(zona);
+    });
   }
 
   function pintarPendientes(zona) {
@@ -1764,6 +1825,11 @@
       return;
     }
     var albumes = (datos.albumes || []).filter(function (a) { return a && a.id; });
+    var faltan = lista.filter(function (p) { return !p.datos; }).length;
+    zona.appendChild(el("div", { class: "pendientes__progreso", hidden: !faltan || !cargandoPendientes ? true : null, role: "status", "aria-live": "polite" }, [
+      el("p", { class: "pendientes__texto", texto: "Cargando fotos…" }),
+      el("div", { class: "barra-progreso", role: "progressbar", "aria-label": "Fotos cargadas" }, [el("span")])
+    ]));
     var rejilla = el("div", { class: "fotos-panel" });
     lista.forEach(function (p) {
       var sel = el("select", { "aria-label": "Álbum para esta foto" });
@@ -1779,7 +1845,14 @@
       var info = [p.albumTitulo ? "Para: " + p.albumTitulo : "", p.nombre ? "Enviada por: " + p.nombre : "", p.fecha ? new Date(p.fecha).toLocaleDateString("es-PR") : ""]
         .filter(Boolean).join(" · ");
       rejilla.appendChild(el("div", { class: "foto-p" + (aprobada ? " foto-p--aprobada" : ""), "data-pendiente": p.id }, [
-        el("img", { src: p.datos ? "data:" + p.tipo + ";base64," + p.datos : "", alt: "Foto enviada" }),
+        el("div", { class: "foto-p__marco", "data-carga": p.datos ? "lista" : p.error ? "error" : p.cargando ? "cargando" : "espera" }, [
+          el("img", { src: p.datos ? "data:" + p.tipo + ";base64," + p.datos : null, alt: "Foto enviada" }),
+          el("div", { class: "foto-p__cargando" }, [
+            el("span", { class: "foto-p__estado-texto" }),
+            el("div", { class: "foto-p__barra" }, [el("span")]),
+            el("button", { class: "btn btn--borde btn--chico foto-p__reintentar", type: "button", onclick: function () { p.error = false; pintarPendientes(zona); cargarImagenesPendientes(zona); } }, ["Reintentar"])
+          ])
+        ]),
         el("span", { class: "foto-p__info", texto: info }),
         p.nota ? el("span", { class: "foto-p__info", texto: "«" + p.nota + "»" }) : null,
         aprobada

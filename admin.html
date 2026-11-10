@@ -92,6 +92,25 @@
     .album-p__info strong { color: var(--navy); overflow-wrap: anywhere; }
     .album-p__info span { color: var(--suave); font-size: .9rem; }
     .album-p__botones { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .pendientes__progreso { background: #fff; border: 1px solid #dde3ef; border-left: 5px solid #f4ab19; border-radius: 12px; padding: 12px 14px; margin: 6px 0 14px; }
+    .pendientes__progreso[hidden] { display: none; }
+    .pendientes__texto { margin: 0 0 8px; font-weight: 700; color: #0a2e7f; font-size: .95rem; }
+    .foto-p__marco { position: relative; border-radius: 10px; overflow: hidden; background: #eef2f9; aspect-ratio: 4 / 3; }
+    .foto-p__marco img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .foto-p__marco:not([data-carga="lista"]) img { visibility: hidden; }
+    .foto-p__cargando { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; text-align: center; }
+    .foto-p__marco[data-carga="lista"] .foto-p__cargando { display: none; }
+    .foto-p__estado-texto { font-size: .85rem; font-weight: 700; color: #55607a; }
+    .foto-p__marco[data-carga="espera"] .foto-p__estado-texto::before { content: "En espera…"; }
+    .foto-p__marco[data-carga="cargando"] .foto-p__estado-texto::before { content: "Cargando foto…"; color: #0a2e7f; }
+    .foto-p__marco[data-carga="error"] .foto-p__estado-texto::before { content: "No se pudo cargar"; color: #a1281d; }
+    .foto-p__barra { width: 80%; height: 8px; background: #d9e0ec; border-radius: 999px; overflow: hidden; }
+    .foto-p__marco[data-carga="error"] .foto-p__barra { display: none; }
+    .foto-p__reintentar { display: none !important; }
+    .foto-p__marco[data-carga="error"] .foto-p__reintentar { display: inline-flex !important; }
+    .foto-p__barra span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #1d52bc, #f4ab19); border-radius: 999px; transition: width .25s ease; }
+    .foto-p__barra span.indeterminada { width: 40% !important; animation: indeterminada 1.1s ease-in-out infinite; }
+    @keyframes indeterminada { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
     .interruptores { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
     .interruptor { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: .88rem; font-weight: 700; color: var(--navy); user-select: none; }
     .interruptor__input { position: absolute; opacity: 0; width: 1px; height: 1px; }
@@ -417,6 +436,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js" integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="fechas.js?v=4"></script>
   <script src="competencias.js?v=1"></script>
-  <script src="admin.js?v=29"></script>
+  <script src="admin.js?v=30"></script>
 </body>
 </html>
