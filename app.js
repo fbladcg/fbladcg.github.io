@@ -316,7 +316,7 @@
         '<div class="rejilla rejilla--personas">' + directiva.map(function (p) {
           var r = "directiva." + d.directiva.indexOf(p) + ".";
           var foto = p.foto
-            ? '<img class="persona__foto" src="' + t(enlaceSeguro(p.foto)) + '" alt="' + t(p.nombre) + '" loading="lazy">'
+            ? '<img class="persona__foto" src="' + t(enlaceSeguro(p.foto)) + '" alt="' + t(p.nombre) + '" width="120" height="120" loading="lazy" decoding="async">'
             : '<div class="persona__foto persona__foto--iniciales" aria-hidden="true">' + t(iniciales(p.nombre)) + "</div>";
           return '<div class="persona">' + foto + '<h3 data-editar="' + r + 'nombre">' + t(p.nombre) +
             '</h3><p class="persona__puesto" data-editar="' + r + 'puesto">' + t(p.puesto) + "</p></div>";

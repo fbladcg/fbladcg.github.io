@@ -108,7 +108,7 @@
       campos: [
         { k: "nombre", l: "Nombre" },
         { k: "puesto", l: "Puesto", ph: "Presidente(a)" },
-        { k: "foto", l: "Foto (mejor si es cuadrada)", tipo: "foto" }
+        { k: "foto", l: "Foto (se recorta en cuadrado)", tipo: "foto", cuadrada: 480 }
       ] },
     { key: "logros", titulo: "🏆 Logros", tipo: "lista", item: "logro", nuevoArriba: true,
       extraResumen: function (l) { return [l.competencia, l.anio_academico].filter(Boolean).join(" · "); },
@@ -1134,7 +1134,7 @@
       archivo.addEventListener("change", function () {
         if (!archivo.files[0]) return;
         ocupado("Preparando foto…");
-        prepararFoto(archivo.files[0], "fotos", { recortar: c.recortar }).then(function (r) {
+        prepararFoto(archivo.files[0], "fotos", { recortar: c.recortar, cuadrada: c.cuadrada }).then(function (r) {
           obj[c.k] = r;
           marcarCambio();
           dibujar();
@@ -2145,7 +2145,12 @@
       var img = new Image();
       img.onload = function () {
         var a = opciones.recortar ? areaConContenido(img) : { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
-        var s = Math.min(1, MAX_LADO / Math.max(a.w, a.h));
+        // Fotos de perfil (directiva): cuadrado del centro y pequeñas, para que carguen rápido.
+        if (opciones.cuadrada) {
+          var l = Math.min(a.w, a.h);
+          a = { x: a.x + (a.w - l) / 2, y: a.y + (a.h - l) / 2, w: l, h: l };
+        }
+        var s = Math.min(1, (opciones.cuadrada || MAX_LADO) / Math.max(a.w, a.h));
         var c = document.createElement("canvas");
         c.width = Math.round(a.w * s);
         c.height = Math.round(a.h * s);
