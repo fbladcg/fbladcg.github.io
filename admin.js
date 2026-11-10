@@ -1777,23 +1777,49 @@
     });
   }
 
-  // Descarga las fotos pendientes una por una, con una barra en cada foto y otra general.
+  // ---------- Filtro por evento ----------
+  // Las fotos se agrupan por el álbum que pidió el miembro; solo se cargan las del evento escogido.
+  var filtroPend = null;
+  function grupoDe(p) {
+    if (p.albumPedido === undefined) p.albumPedido = p.album || "";
+    return p.albumPedido;
+  }
+  function gruposPendientes() {
+    var orden = [], info = {};
+    (pendientes || []).filter(function (p) { return p.estado !== "rechazada"; }).forEach(function (p) {
+      var g = grupoDe(p);
+      if (!info[g]) {
+        var a = (datos.albumes || []).filter(function (x) { return x && x.id === g; })[0];
+        info[g] = { id: g, titulo: (a && a.titulo) || p.albumTitulo || "Sin evento", total: 0, faltan: 0 };
+        orden.push(g);
+      }
+      info[g].total++;
+      if (p.estado !== "aprobada") info[g].faltan++;
+    });
+    return orden.map(function (g) { return info[g]; });
+  }
+  function enFiltro(p) {
+    return p.estado !== "rechazada" && (filtroPend === "_todas" || grupoDe(p) === filtroPend);
+  }
+
+  // Descarga las fotos del evento escogido una por una, con una barra en cada foto y otra general.
   var cargandoPendientes = false;
   function cargarImagenesPendientes(zona) {
     if (cargandoPendientes) return;
-    var cola = (pendientes || []).filter(function (p) { return !p.datos && !p.vista && p.estado !== "rechazada"; });
-    if (!cola.length) return;
-    cargandoPendientes = true;
     // La sección puede volver a dibujarse mientras se carga: siempre se usa la zona visible.
     var zonaActual = function () { return document.querySelector("#panel .pendientes") || zona; };
-    cola.forEach(function (p) { p.error = false; });
-    var total = cola.length;
-    var general = function (hechas, fraccion) {
+    var faltaCargar = function (p) { return enFiltro(p) && !p.datos && !p.vista && !p.error; };
+    if (!(pendientes || []).some(faltaCargar)) return;
+    cargandoPendientes = true;
+    var general = function (fraccion) {
       var g = zonaActual().querySelector(".pendientes__progreso");
       if (!g) return;
-      g.hidden = hechas >= total;
-      g.querySelector(".pendientes__texto").textContent = "Cargando fotos: " + Math.min(hechas + 1, total) + " de " + total + "…";
-      g.querySelector(".barra-progreso span").style.width = Math.round(((hechas + (fraccion || 0)) / total) * 100) + "%";
+      var delGrupo = (pendientes || []).filter(enFiltro);
+      var total = delGrupo.length;
+      var listas = delGrupo.filter(function (p) { return p.datos || p.vista || p.error; }).length;
+      g.hidden = listas >= total;
+      g.querySelector(".pendientes__texto").textContent = "Cargando fotos: " + Math.min(listas + 1, total) + " de " + total + "…";
+      g.querySelector(".barra-progreso span").style.width = Math.round(((listas + (fraccion || 0)) / Math.max(1, total)) * 100) + "%";
     };
     var marco = function (p) { return zonaActual().querySelector('[data-pendiente="' + p.id + '"] .foto-p__marco'); };
     var pintarMarco = function (p, fraccion) {
@@ -1806,44 +1832,57 @@
         b.style.width = p.cargando && fraccion !== null && fraccion !== undefined ? Math.round(fraccion * 100) + "%" : p.cargando ? "" : "0%";
       }
     };
-    general(0, 0);
-    cola.reduce(function (cadena, p, i) {
-      return cadena.then(function () {
-        if (p.estado === "rechazada") return;
-        p.cargando = true;
-        pintarMarco(p, 0);
-        // Primero la vista previa liviana; la foto original se descarga solo al aprobar.
-        // (Si el script aún no tiene «vista», se usa la foto completa.)
-        var avance = function (f) { pintarMarco(p, f); general(i, f || 0); };
-        return script("vista", { id: p.id, lado: 700, _progreso: avance }).catch(function (e) {
-          if (!/desconocida/i.test(e.message)) throw e;
-          return script("foto", { id: p.id, _esperado: p.tamano ? Math.round(p.tamano * 4 / 3) + 200 : 0, _progreso: avance });
-        }).then(function (r) {
-          if (r.vista) { p.vista = r.datos; p.tipoVista = r.tipo; }
-          else { p.datos = r.datos; p.tipo = r.tipo; }
-          var img = zonaActual().querySelector('[data-pendiente="' + p.id + '"] img');
-          if (img) img.src = (p.datos || p.vista ? "data:" + (p.datos ? p.tipo : p.tipoVista) + ";base64," + (p.datos || p.vista) : null);
-        }).catch(function () { p.error = true; }).then(function () {
-          p.cargando = false;
-          pintarMarco(p);
-          general(i + 1, 0);
-        });
+    var siguiente = function () {
+      var p = (pendientes || []).filter(faltaCargar)[0];
+      if (!p) { cargandoPendientes = false; general(0); return; }
+      p.cargando = true;
+      pintarMarco(p, 0);
+      general(0);
+      // Primero la vista previa liviana; la foto original se descarga solo al aprobar.
+      // (Si el script aún no tiene «vista», se usa la foto completa.)
+      var avance = function (f) { pintarMarco(p, f); general(f || 0); };
+      script("vista", { id: p.id, lado: 700, _progreso: avance }).catch(function (e) {
+        if (!/desconocida/i.test(e.message)) throw e;
+        return script("foto", { id: p.id, _esperado: p.tamano ? Math.round(p.tamano * 4 / 3) + 200 : 0, _progreso: avance });
+      }).then(function (r) {
+        if (r.vista) { p.vista = r.datos; p.tipoVista = r.tipo; }
+        else { p.datos = r.datos; p.tipo = r.tipo; }
+        var img = zonaActual().querySelector('[data-pendiente="' + p.id + '"] img');
+        if (img) img.src = "data:" + (p.datos ? p.tipo : p.tipoVista) + ";base64," + (p.datos || p.vista);
+      }).catch(function () { p.error = true; }).then(function () {
+        p.cargando = false;
+        pintarMarco(p);
+        siguiente();
       });
-    }, Promise.resolve()).then(function () {
-      cargandoPendientes = false;
-      // Si llegaron fotos nuevas mientras tanto, se cargan también.
-      if ((pendientes || []).some(function (p) { return !p.datos && !p.vista && !p.error && p.estado !== "rechazada"; })) cargarImagenesPendientes(zona);
-    });
+    };
+    siguiente();
   }
 
   function pintarPendientes(zona) {
     zona.innerHTML = "";
     actualizarContadores();
-    var lista = (pendientes || []).filter(function (p) { return p.estado !== "rechazada"; });
-    if (!lista.length) {
+    var grupos = gruposPendientes();
+    if (!grupos.length) {
       zona.appendChild(el("div", { class: "vacio", texto: "No hay fotos nuevas. 🎉" }));
       return;
     }
+    // Evento escogido: se mantiene si todavía tiene fotos; si no, el primero que falte por revisar.
+    if (filtroPend !== "_todas" && !grupos.some(function (g) { return g.id === filtroPend; })) {
+      filtroPend = (grupos.filter(function (g) { return g.faltan; })[0] || grupos[0]).id;
+    }
+    var total = grupos.reduce(function (n, g) { return n + g.total; }, 0);
+    var chip = function (id, texto, n, faltan) {
+      return el("button", { type: "button", class: "chip-evento" + (filtroPend === id ? " chip-evento--activo" : ""), "aria-pressed": filtroPend === id ? "true" : "false",
+        onclick: function () { filtroPend = id; pintarPendientes(zona); cargarImagenesPendientes(zona); } }, [
+        texto, el("span", { class: "chip-evento__n" + (faltan ? "" : " chip-evento__n--listo"), texto: faltan ? String(faltan) : "✓" })
+      ]);
+    };
+    if (grupos.length > 1) {
+      zona.appendChild(el("div", { class: "chips-eventos", role: "group", "aria-label": "Filtrar por evento" },
+        grupos.map(function (g) { return chip(g.id, g.titulo, g.total, g.faltan); })
+          .concat([chip("_todas", "Todas", total, grupos.reduce(function (n, g) { return n + g.faltan; }, 0))])));
+    }
+    var lista = (pendientes || []).filter(enFiltro);
     var albumes = (datos.albumes || []).filter(function (a) { return a && a.id; });
     var faltan = lista.filter(function (p) { return !p.datos && !p.vista; }).length;
     zona.appendChild(el("div", { class: "pendientes__progreso", hidden: !faltan || !cargandoPendientes ? true : null, role: "status", "aria-live": "polite" }, [
@@ -1948,7 +1987,7 @@
   // Muestra la vista previa y en seguida baja la original (calidad completa).
   var visorP = null;
   function abrirVisorPendientes(p, zona) {
-    var lista = function () { return (pendientes || []).filter(function (x) { return x.estado !== "rechazada"; }); };
+    var lista = function () { return (pendientes || []).filter(enFiltro); };
     var pos = Math.max(0, lista().indexOf(p));
     if (visorP) visorP.remove();
     var img = el("img", { alt: "Foto enviada" });

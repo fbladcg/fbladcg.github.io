@@ -92,6 +92,12 @@
     .album-p__info strong { color: var(--navy); overflow-wrap: anywhere; }
     .album-p__info span { color: var(--suave); font-size: .9rem; }
     .album-p__botones { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .chips-eventos { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
+    .chip-evento { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #dde3ef; background: #fff; color: #0a2e7f; font: inherit; font-weight: 700; font-size: .9rem; padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+    .chip-evento:hover { border-color: #1d52bc; }
+    .chip-evento--activo { background: #0a2e7f; border-color: #0a2e7f; color: #fff; }
+    .chip-evento__n { background: #f4ab19; color: #0a2e7f; border-radius: 999px; min-width: 22px; padding: 1px 7px; font-size: .78rem; text-align: center; }
+    .chip-evento__n--listo { background: #d6f2df; color: #1d5f33; }
     .pendientes__progreso { background: #fff; border: 1px solid #dde3ef; border-left: 5px solid #f4ab19; border-radius: 12px; padding: 12px 14px; margin: 6px 0 14px; }
     .pendientes__progreso[hidden] { display: none; }
     .pendientes__texto { margin: 0 0 8px; font-weight: 700; color: #0a2e7f; font-size: .95rem; }
@@ -465,6 +471,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js" integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="fechas.js?v=4"></script>
   <script src="competencias.js?v=1"></script>
-  <script src="admin.js?v=34"></script>
+  <script src="admin.js?v=35"></script>
 </body>
 </html>
