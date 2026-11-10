@@ -319,6 +319,15 @@ albumes:
       - foto: fotos/albumes/album-mw8rzoot/img-7981-mw9ziwufne9.webp
         descripcion: ""
         autor: Genesis Cardona
+      - foto: fotos/albumes/album-mw8rzoot/img-9960-mwaqjvepiou.webp
+        descripcion: ""
+        autor: Jilayris
+      - foto: fotos/albumes/album-mw8rzoot/img-9959-mwaqjzvoj9h.webp
+        descripcion: ""
+        autor: Jilayris
+      - foto: fotos/albumes/album-mw8rzoot/img-0010-mwaqkwa6ikr.webp
+        descripcion: ""
+        autor: Jilayris
     recibe_fotos: true
 subidas:
   activo: true
