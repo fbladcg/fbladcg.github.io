@@ -328,6 +328,12 @@ albumes:
       - foto: fotos/albumes/album-mw8rzoot/img-0010-mwaqkwa6ikr.webp
         descripcion: ""
         autor: Jilayris
+      - foto: fotos/albumes/album-mw8rzoot/79a684f6-1a1d-4929-95de-f1fc5cc235f8-mwaqnvqayom.webp
+        descripcion: ""
+        autor: Gia
+      - foto: fotos/albumes/album-mw8rzoot/2a1aab7e-53a4-4b7a-80cd-633e46870823-mwaqnyxb6xq.webp
+        descripcion: ""
+        autor: Gia
     recibe_fotos: true
 subidas:
   activo: true
