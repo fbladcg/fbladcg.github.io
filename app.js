@@ -363,15 +363,25 @@
     }
 
     // ---- Contacto ----
+    // Íconos sencillos (usan el color del texto del botón).
+    var svg = function (dentro) {
+      return '<svg class="contacto__icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + dentro + "</svg>";
+    };
+    var ICONOS = {
+      correo: svg('<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+      Instagram: svg('<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3" fill="currentColor"/>'),
+      Facebook: svg('<path fill="currentColor" d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.6 1.6-1.6h1.7V4.4c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.2v2.3H7.5V14h2.7v8h3.3z"/>'),
+      TikTok: svg('<path fill="currentColor" d="M16.6 3c.3 2.2 1.6 3.6 3.9 3.8v3.1c-1.4.1-2.7-.3-3.9-1.1v6.1a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v3.2a2.4 2.4 0 1 0 1.5 2.3V3h3.2z"/>')
+    };
     var redes = [
       ["Instagram", c.instagram], ["Facebook", c.facebook], ["TikTok", c.tiktok]
     ].filter(function (r) { return r[1]; });
     if (c.correo || redes.length) {
       agregar("contacto", "Contacto", seccion("contacto", titulos.contacto || "Contacto",
         '<div class="contacto">' +
-        (c.correo ? '<a class="boton boton--borde contacto__correo" href="mailto:' + t(c.correo) + '" title="' + t(c.correo) + '" aria-label="Correo electrónico: ' + t(c.correo) + '">✉ Correo electrónico</a>' : "") +
+        (c.correo ? '<a class="boton boton--borde contacto__correo" href="mailto:' + t(c.correo) + '" title="' + t(c.correo) + '" aria-label="Correo electrónico: ' + t(c.correo) + '">' + ICONOS.correo + "Correo electrónico</a>" : "") +
         redes.map(function (r) {
-          return '<a class="boton boton--borde" href="' + t(enlaceSeguro(r[1])) + '" target="_blank" rel="noopener">' + r[0] + "</a>";
+          return '<a class="boton boton--borde" href="' + t(enlaceSeguro(r[1])) + '" target="_blank" rel="noopener">' + (ICONOS[r[0]] || "") + r[0] + "</a>";
         }).join("") + "</div>"));
     }
 

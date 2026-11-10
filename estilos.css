@@ -348,7 +348,8 @@ button.boton:disabled { opacity: .7; cursor: progress; transform: none; }
 
 /* ---------- Contacto ---------- */
 .contacto { display: flex; flex-wrap: wrap; gap: 12px; }
-.contacto .boton { overflow-wrap: anywhere; }
+.contacto .boton { overflow-wrap: anywhere; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.contacto__icono { width: 20px; height: 20px; flex: none; }
 
 /* ---------- Pie ---------- */
 .pie { background: var(--black); color: var(--white); padding: 28px 0; text-align: center; font-size: .9rem; }
